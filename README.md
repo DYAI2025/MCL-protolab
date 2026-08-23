@@ -1,6 +1,6 @@
 # MCL Prototype Lab - Concept Foundation
 
-Status: PLAN / concept only. No runtime engine is selected and nothing in this package changes DYAI2025/MC_legends.
+Status: concept foundation committed; **Prototype Runtime Exception granted 2026-08-23** — the runtime build is specified in `docs/plans/2026-08-23-runtime-foundation-mission.md` (design: `docs/plans/2026-08-23-runtime-foundation-design.md`) and not yet executed. Nothing in this repository changes DYAI2025/MC_legends.
 
 ## Purpose
 
@@ -12,7 +12,7 @@ idea -> experiment spec -> agent implementation -> localhost play -> tune -> res
 
 ## Current architecture decision
 
-Use a separate repository (`DYAI2025/mcl-prototype-lab`) with:
+Use a separate repository (this one, `DYAI2025/MCL-protolab`; older concept records call it `mcl-prototype-lab`) with:
 
 - experiment contracts and an experiment template;
 - a versioned asset registry with provenance and fallback metadata;
@@ -20,7 +20,7 @@ Use a separate repository (`DYAI2025/mcl-prototype-lab`) with:
 - validation and architecture records;
 - a deliberately empty `runtime-adapters/` slot.
 
-The runtime adapter is blocked until MCL-1 is resolved or project governance explicitly permits a disposable, non-canonical prototype runtime.
+The runtime adapter was blocked until MCL-1 resolution or an explicit governance exception. That exception was granted on 2026-08-23 (disposable, non-canonical prototype runtime only — see mission §1); the adapter itself is built on `feat/prototype-runtime-foundation` per the mission.
 
 ## First playable target after the gate clears
 
