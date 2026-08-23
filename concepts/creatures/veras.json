@@ -1,0 +1,19 @@
+{
+  "id": "veras",
+  "display_name": "Veras",
+  "design_status": "STATED",
+  "source_refs": ["MLOA:32735234#Veras"],
+  "role": "forest/spirit guardian and quest-giver concept",
+  "disposition": "neutral-good and never hostile",
+  "silhouette": "small floating translucent soul-orb with a core roughly player-head-sized and a larger luminous aura",
+  "scale": "core approximately player-head-sized; glow may extend beyond the core",
+  "visual_layers": ["geometry", "material", "emissive", "particles", "trail", "light", "post_effect"],
+  "fx_profile": {
+    "primary": ["silky translucent white-green body", "internal moving luminous particles", "soft luminous flight trail"],
+    "secondary": ["gentle local light", "soft restrained bloom"],
+    "readability_goal": "must feel benevolent, ethereal and alive without looking like a generic opaque glowing ball"
+  },
+  "concept_capabilities": ["spawn placeholder", "hover motion", "preview internal particles and trail"],
+  "extension_points": ["replace placeholder with authored asset", "quest interaction", "forest-life reactions", "revival item presentation"],
+  "non_goals": ["final quest system", "final relationship persistence", "final revival mechanic"]
+}
