@@ -130,7 +130,7 @@ No commit. Task 0 produces git state only. Record in your decision notes: `Evide
 Generate with the official scaffolder into a scratch directory, then transplant only what is needed. This is what gives you provenance-documented ammo binaries for free.
 
 **Files:**
-- Create: `package.json`, `index.html`, `src/main.ts`, `src/style.css`, `src/vite-env.d.ts`, `.nvmrc`, `.gitignore`
+- Create: `package.json`, `index.html`, `src/main.ts`, `src/style.css`, `src/vite-env.d.ts`, `.nvmrc`, `.npmrc`, `.gitignore`
 - Create: `public/ammo/ammo.js`, `public/ammo/ammo.wasm.js`, `public/ammo/ammo.wasm.wasm`, `public/ammo/LICENSE`, `public/ammo/SOURCE.md`
 
 **Step 1: Generate the reference project in a scratch dir**
@@ -195,8 +195,8 @@ Exact version set — this combination was installed together and passed every g
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
-    "@types/node": "^26.2.0",
-    "ajv": "^8.17.1",
+    "@types/node": "26.2.0",
+    "ajv": "8.20.0",
     "dependency-cruiser": "18.2.0",
     "eslint": "10.9.0",
     "eslint-import-resolver-typescript": "4.4.5",
@@ -209,10 +209,16 @@ Exact version set — this combination was installed together and passed every g
 }
 ```
 
-**Step 5: Write `.nvmrc`**
+**Step 5: Write `.nvmrc` and `.npmrc`**
 
+`.nvmrc`:
 ```
 24.19.0
+```
+
+`.npmrc` — npm does NOT enforce `engines` without this; `EBADENGINE` is otherwise only a warning, and Task 18's fresh-clone gate is exactly where a wrong Node must fail at `npm install` rather than three commands later:
+```
+engine-strict=true
 ```
 
 **Step 6: Write `index.html`**
@@ -232,6 +238,23 @@ Exact version set — this combination was installed together and passed every g
   </body>
 </html>
 ```
+
+**Step 6b: Write `src/style.css`**
+
+The scaffolder ships `src/starter.css`, not `style.css`, and roughly half of it is demo chrome (`.hud`, `.panel`, `.crosshair`, `.swatch`) for a starter overlay this repo does not have. Author the reset instead — and position the two elements explicitly, or the inspector Task 10 builds is laid out **below the fold and clipped**: with the canvas as a normal block filling the viewport, `#inspector` starts at `y = viewportHeight` and `body { overflow: hidden }` hides it.
+
+```css
+* { box-sizing: border-box; }
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+body { background: #11151c; color: #f8fafc; font-family: ui-sans-serif, system-ui, sans-serif; }
+canvas { display: block; }
+
+#application-canvas { position: fixed; inset: 0; }
+#inspector { position: fixed; top: 0; left: 0; z-index: 1; pointer-events: none; }
+#inspector * { pointer-events: auto; }
+```
+
+The `pointer-events` pair is load-bearing: the overlay must not swallow the mouse-look input the canvas needs for the third-person camera, while its own sliders and reset button stay clickable. Verify by measuring the rendered rects (`getBoundingClientRect`), not by reading the CSS — `#inspector` must report `y: 0`.
 
 **Step 7: Write `src/vite-env.d.ts`**
 
@@ -253,8 +276,11 @@ declare module 'playcanvas/scripts/esm/camera-controls.mjs' {
   export class CameraControls extends Script {
     static scriptName: string;
   }
+  export function damp(damping: number, dt: number): number;
 }
 ```
+
+Both `.mjs` files export exactly two symbols each — the class and `damp`. Verified against `playcanvas@2.21.4` source: `third-person-controller.mjs:100` `static scriptName = 'thirdPersonController'`, `camera-controls.mjs:150` `static scriptName = 'cameraControls'`, `damp = (damping, dt) => 1 - Math.pow(damping, dt * 1000)`. The package's `exports` map exposes `"./scripts/*"` with no `types` condition, so these ambient declarations are required, not redundant.
 
 **Step 8: Extend `.gitignore`**
 
@@ -263,8 +289,13 @@ node_modules/
 dist/
 artifacts/test-results/
 playwright-report/
+test-results/
+*.tsbuildinfo
+*.local
 .DS_Store
 ```
+
+Note the deliberate asymmetry: `artifacts/test-results/` is ignored, but `artifacts/screens/*.png` is **committed** — those screenshots are the runtime evidence Tasks 3/16/19 require. `test-results/` is Playwright's default `outputDir` (Task 2 redirects it, but a stray `npx playwright test` without that config writes there). `*.local` covers Vite's `.env.local` convention, which `AGENTS.md` rule 8 makes a real concern.
 
 **Step 9: Install**
 
@@ -276,7 +307,7 @@ Expected: completes without `EBADENGINE`. Record the exact output in the final r
 **Step 10: Commit**
 
 ```bash
-git add package.json package-lock.json .nvmrc .gitignore index.html public/ammo src/vite-env.d.ts src/style.css
+git add package.json package-lock.json .nvmrc .npmrc .gitignore index.html public/ammo src/main.ts src/style.css src/vite-env.d.ts
 git commit -m "chore: scaffold Vite + PlayCanvas 2.21.4 baseline with provenance-documented Ammo binaries"
 ```
 
