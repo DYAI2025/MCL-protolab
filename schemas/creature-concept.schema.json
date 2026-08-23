@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "display_name",
+    "design_status",
+    "source_refs",
+    "role",
+    "disposition",
+    "silhouette",
+    "scale",
+    "visual_layers",
+    "fx_profile",
+    "concept_capabilities",
+    "extension_points",
+    "non_goals"
+  ],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]+$"},
+    "display_name": {"type": "string", "minLength": 1},
+    "design_status": {"enum": ["STATED", "TENTATIVE", "AMBIGUOUS", "CONFLICT"]},
+    "source_refs": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "role": {"type": "string", "minLength": 1},
+    "disposition": {"type": "string", "minLength": 1},
+    "silhouette": {"type": "string", "minLength": 1},
+    "scale": {"type": "string", "minLength": 1},
+    "visual_layers": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["geometry", "material", "emissive", "particles", "trail", "decal", "light", "fog", "post_effect"]}
+    },
+    "fx_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary", "secondary", "readability_goal"],
+      "properties": {
+        "primary": {"type": "array", "items": {"type": "string"}},
+        "secondary": {"type": "array", "items": {"type": "string"}},
+        "readability_goal": {"type": "string", "minLength": 1}
+      }
+    },
+    "concept_capabilities": {"type": "array", "items": {"type": "string"}},
+    "extension_points": {"type": "array", "items": {"type": "string"}},
+    "non_goals": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+  }
+}
