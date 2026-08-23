@@ -1,0 +1,19 @@
+{
+  "id": "mugosh",
+  "display_name": "Mugosh",
+  "design_status": "STATED",
+  "source_refs": ["MLOA:32735234#Mugosh"],
+  "role": "guardian / high-risk encounter / possible ally",
+  "disposition": "neutral and relationship-dependent",
+  "silhouette": "powerful quadruped with broad shoulders, hairy face and one large magical forehead/nose horn; distinct fantasy silhouette rather than a direct real-animal copy",
+  "scale": "clearly stronger/larger than the player but not a giant colossus",
+  "visual_layers": ["geometry", "material", "emissive", "light", "post_effect"],
+  "fx_profile": {
+    "primary": ["horn emissive state from blue neutral through white allied to deep red hostile"],
+    "secondary": ["subtle local light contribution", "restrained bloom around horn"],
+    "readability_goal": "relationship/danger state must be legible from the horn before combat behavior exists"
+  },
+  "concept_capabilities": ["spawn placeholder", "switch relationship visual state", "inspect at player-relative scale"],
+  "extension_points": ["replace placeholder with GLB", "animation", "relationship logic", "quests", "combat"],
+  "non_goals": ["final combat balance", "final relationship system", "final model or animation"]
+}

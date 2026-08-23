@@ -1,0 +1,19 @@
+{
+  "id": "flammenwolf",
+  "display_name": "Flammenwolf",
+  "design_status": "STATED",
+  "source_refs": ["MLOA:32735234#Flammenwolf"],
+  "role": "strong direct PvE hunter",
+  "disposition": "fundamentally hostile",
+  "silhouette": "powerful wolf-like predator with visible fire/glow concentrated in the body and open mouth",
+  "scale": "approximately 1.5 times player scale as a working visual direction",
+  "visual_layers": ["geometry", "material", "emissive", "particles", "trail", "decal", "light", "post_effect"],
+  "fx_profile": {
+    "primary": ["fire visible in open mouth", "moving fire/ember treatment", "burning trail while moving"],
+    "secondary": ["short-lived ground scorch/decal", "local fire light", "restrained bloom"],
+    "readability_goal": "the creature must read immediately as a dangerous fire predator without requiring combat UI"
+  },
+  "concept_capabilities": ["spawn placeholder", "preview howl/mouth-fire state", "preview movement trail"],
+  "extension_points": ["replace placeholder with GLB", "animation", "fire projectile", "melee AI", "pack behavior"],
+  "non_goals": ["final fire simulation", "final damage system", "final wolf AI"]
+}
