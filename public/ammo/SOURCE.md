@@ -14,3 +14,14 @@ ef166d1315bc4a6441a8de341ecdf6ac4e7d69055caec65c523ed1a4e8e19b15  ammo.js
 5645b5a0c4f03be9d9d1ae604ffacd5e5e525310cfd1d0ed27474cdd1f34aab0  ammo.wasm.js
 a61b504d4a6ce6bb93bd843e0f61edb8115e7317f1b3462247031a83ddb25d09  ammo.wasm.wasm
 ```
+
+## Local provenance
+
+- Status: `approved_for_prototype` (physics runtime binary, not a gameplay asset)
+- Retrieved: 2026-08-23 via `npm create playcanvas@latest -- -f engine -s third-person-controller`,
+  then copied verbatim from `<scaffold>/public/ammo/`. Files above are byte-identical to that output.
+- Roles: `ammo.wasm.js` = Emscripten glue, `ammo.wasm.wasm` = wasm binary,
+  `ammo.js` = asm.js fallback (wired as `WasmModule.setConfig('Ammo', { fallbackUrl })`).
+- Deliberately NOT in `assets/registry/` — `asset-registry.schema.json`'s `kind` enum
+  (`character|creature|environment|prop|audio|fx|ui`) covers gameplay assets only. This file is
+  the provenance record of record for these binaries.

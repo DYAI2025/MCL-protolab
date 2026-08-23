@@ -13,4 +13,5 @@ declare module 'playcanvas/scripts/esm/camera-controls.mjs' {
   export class CameraControls extends Script {
     static scriptName: string;
   }
+  export function damp(damping: number, dt: number): number;
 }
