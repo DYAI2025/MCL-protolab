@@ -1,0 +1,19 @@
+{
+  "id": "zhalm",
+  "display_name": "Zhalm / Druhen creature branch",
+  "design_status": "CONFLICT",
+  "source_refs": ["MLOA:32735234#Zhalm-Druhen", "MLOA:20250626"],
+  "role": "stealth/hunt predator using a distributed root/sensor network",
+  "disposition": "hostile",
+  "silhouette": "blind or strongly sight-impaired plant/root creature with distributed smaller sensors and roots",
+  "scale": "large creature plus smaller environmental sensor/root elements; exact final scale remains open",
+  "visual_layers": ["geometry", "material", "emissive", "particles", "trail", "decal", "light", "fog", "post_effect"],
+  "fx_profile": {
+    "primary": ["visible black-violet signal pulse travelling through a living root network", "black-violet crystallization read"],
+    "secondary": ["subtle root/sensor emissive cues", "environmental particles/fog only where they improve signal readability"],
+    "readability_goal": "the distributed colony/network identity must be visually understandable and not reduce to a generic blind chase monster"
+  },
+  "concept_capabilities": ["spawn large placeholder", "spawn root/sensor placeholders", "trigger visible network pulse", "preview crystallization material state"],
+  "extension_points": ["replace placeholders with GLB assets", "sound sensing", "investigate/chase AI", "crystallization gameplay", "persistent traces"],
+  "non_goals": ["resolve the Zhalm/Druhen naming conflict", "final stealth AI", "final crystallization rules"]
+}
