@@ -378,7 +378,11 @@ export default tseslint.config(
     files: ['**/*.ts'],
     plugins: { boundaries },
     settings: {
-      // REQUIRED. Without the resolver the boundaries rule silently passes on TS relative imports.
+      // REQUIRED for extensionless imports. Measured 2026-08-23, 2x2 matrix:
+      //   with resolver    + './x'    -> fires    | with resolver    + './x.ts' -> fires
+      //   WITHOUT resolver + './x'    -> SILENT PASS | WITHOUT resolver + './x.ts' -> fires
+      // `.ts`-extension imports resolve literally and need no resolver; extensionless
+      // ones silently pass without it. Keep this line.
       'import/resolver': { typescript: { alwaysTryTypes: true } },
       'boundaries/elements': [
         { type: 'runtime', pattern: 'src/runtime/**' },
@@ -452,8 +456,12 @@ module.exports = {
   options: {
     tsConfig: { fileName: 'tsconfig.json' },
     tsPreCompilationDeps: true,
+    // doNotFollow keeps node_modules modules in the graph as leaves without
+    // traversing into them. Do NOT add `exclude: node_modules` here: exclude
+    // strips those modules from the graph entirely, which silently kills the
+    // core-not-to-playcanvas rule (measured 2026-08-23 — with `exclude` set,
+    // a file importing playcanvas reported `✔ no dependency violations`).
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: '(^|/)node_modules/' },
   },
 };
 ```
@@ -523,16 +531,28 @@ npm run typecheck && npm run lint && npm run boundaries && npm test && npm run b
 ```
 Expected: every command exits 0. `npm run boundaries` prints `✔ no dependency violations found`.
 
-**Step 10: Prove the boundary gate actually bites**
+**Step 10: Prove EVERY boundary rule actually bites**
 
-A gate that has never failed proves nothing.
+A gate that has never failed proves nothing — and one of these rules shipped dead. Canary each of the five rules in turn, confirming `EXIT=1` and the expected message, then delete the canary and confirm `EXIT=0`. Measured 2026-08-23, all five now fire:
 
+```
+1 runtime-not-to-experiments   EXIT=1  src/runtime/canary.ts → experiments/_canary/logic.ts
+2 core-not-to-experiments      EXIT=1  src/core/canary.ts → experiments/_canary/logic.ts
+3 core-not-to-runtime          EXIT=1  src/core/canary.ts → src/runtime/target.ts
+4 core-not-to-playcanvas       EXIT=1  src/core/canary.ts → node_modules/playcanvas/build/playcanvas.js
+5 no-mc-legends-dependency     EXIT=1  src/core/canary.ts → ../vendor-probe/MC_legends/api.ts
+clean tree                     EXIT=0  ✔ no dependency violations found
+```
+
+Example for rule 1:
 ```bash
 mkdir -p experiments/_canary && echo 'export const x = 1;' > experiments/_canary/logic.ts
 mkdir -p src/runtime && printf "import { x } from '../../experiments/_canary/logic.ts';\nexport const y = x;\n" > src/runtime/canary.ts
 npm run boundaries; echo "EXIT=$?"
 ```
 Expected: prints `error runtime-not-to-experiments: src/runtime/canary.ts → experiments/_canary/logic.ts` and `EXIT=1`.
+
+Rule 4 is the one that was dead. Diagnose a suspicious `✔` with `--output-type json` and check whether the module's `dependencies` array is empty — an empty array means the edge was excluded from the graph, not that the import is absent.
 
 Then remove the canary and confirm it goes green again:
 
