@@ -1,0 +1,414 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-23T09:27:10Z",
+  "mode": "PLAN",
+  "repository": {
+    "owner": "DYAI2025",
+    "name": "MC_legends",
+    "remote_url": "https://github.com/DYAI2025/MC_legends.git",
+    "identity_status": "verified",
+    "default_branch": "main",
+    "current_branch": null,
+    "head_sha": "614966f215a07aac9cd8ac2d763308b03c64096f",
+    "worktree_status": "unknown",
+    "write_authorized": false,
+    "protection_summary": [
+      "Remote read-only planning run; branch protection/rulesets were not read."
+    ],
+    "existing_pull_requests": []
+  },
+  "product": {
+    "vision": "Create a reusable, disposable prototype lab for rapid gameplay and asset experiments without turning the prototype stack into the future production game architecture.",
+    "target_users": [
+      "MC Legends creators and family playtesters",
+      "coding agents implementing short prototype slices"
+    ],
+    "user_problems": [
+      "Gameplay ideas need to become playable quickly without rebuilding camera, asset handling, reset and debug plumbing for every experiment.",
+      "Prototype code must not contaminate the production web foundation or silently become a commitment to a final game engine.",
+      "Assets need to be replaceable and traceable while visual direction is still evolving."
+    ],
+    "outcomes": [
+      "A new experiment can be added through a stable experiment contract and isolated folder.",
+      "Assets can be swapped through a registry without changing mechanic code.",
+      "A future runtime adapter can provide third-person local play once project governance permits an engine choice.",
+      "Prototype results remain evidence for design decisions, not automatic canon."
+    ],
+    "scope": [
+      "prototype experiment contract",
+      "asset registry contract",
+      "runtime-adapter boundary",
+      "debug/tuning harness contract",
+      "local-first developer workflow",
+      "agent instructions",
+      "architecture and validation artifacts"
+    ],
+    "out_of_scope": [
+      "final game engine selection",
+      "Minecraft loader selection",
+      "production alpha or beta foundation",
+      "backend/database/cloud deployment",
+      "multiplayer and persistent world services",
+      "final authentication/security architecture",
+      "final game art and public brand release"
+    ],
+    "capabilities": [
+      "register isolated experiments",
+      "register versioned assets with provenance",
+      "define tunables and success/kill criteria",
+      "plug in one validated runtime adapter later"
+    ],
+    "user_journeys": [
+      "idea -> experiment specification -> agent implementation -> localhost play -> tune -> reset -> compare -> keep/discard learning",
+      "placeholder asset -> registry entry -> replacement asset -> replay experiment without mechanic rewrite"
+    ]
+  },
+  "drivers": {
+    "business": [
+      {
+        "id": "DRV-BUS-001",
+        "statement": "Maximize time-to-learning from gameplay experiments instead of optimizing for production completeness.",
+        "classification": "hard_constraint",
+        "priority": 5,
+        "evidence_refs": [
+          "EV-010"
+        ]
+      }
+    ],
+    "domain": [
+      {
+        "id": "DRV-DOM-001",
+        "statement": "Prototype hypotheses and Confluence design status must remain distinguishable; a prototype must never auto-promote tentative ideas to canon.",
+        "classification": "hard_constraint",
+        "priority": 5,
+        "evidence_refs": [
+          "EV-006",
+          "EV-008"
+        ]
+      }
+    ],
+    "data": [
+      {
+        "id": "DRV-DAT-001",
+        "statement": "Experiment metadata, tunables and asset provenance must be versioned in repository files; no database is justified for the first foundation.",
+        "classification": "minimum_requirement",
+        "priority": 4,
+        "evidence_refs": [
+          "EV-008",
+          "EV-010"
+        ]
+      }
+    ],
+    "integration": [
+      {
+        "id": "DRV-INT-001",
+        "statement": "The prototype lab may read design references conceptually, but it must not depend at runtime on Confluence, Jira, the web app, PostgreSQL or VPS services.",
+        "classification": "hard_constraint",
+        "priority": 5,
+        "evidence_refs": [
+          "EV-007",
+          "EV-012"
+        ]
+      }
+    ],
+    "security_privacy": [
+      {
+        "id": "DRV-SEC-001",
+        "statement": "Prototype fixtures and asset metadata must contain no real child names, credentials or private submission data.",
+        "classification": "hard_constraint",
+        "priority": 5,
+        "evidence_refs": [
+          "EV-008"
+        ]
+      }
+    ],
+    "reliability": [
+      {
+        "id": "DRV-REL-001",
+        "statement": "Every experiment must have a deterministic reset path and a smoke-testable startup contract once a runtime adapter exists.",
+        "classification": "minimum_requirement",
+        "priority": 4,
+        "evidence_refs": [
+          "EV-010"
+        ]
+      }
+    ],
+    "performance": [
+      {
+        "id": "DRV-PERF-001",
+        "statement": "No numeric frame-rate or load target is canonically established for the prototype lab; do not justify architecture with invented performance SLOs.",
+        "classification": "later_optimization",
+        "priority": 2,
+        "evidence_refs": [
+          "EV-005"
+        ]
+      }
+    ],
+    "modifiability": [
+      {
+        "id": "DRV-MOD-001",
+        "statement": "A new experiment should remain local to its experiment folder plus explicit registry changes; shared mechanics are promoted only after repeated use demonstrates value.",
+        "classification": "minimum_requirement",
+        "priority": 5,
+        "evidence_refs": [
+          "EV-010"
+        ]
+      },
+      {
+        "id": "DRV-MOD-002",
+        "statement": "Replacing an asset must not require edits to gameplay mechanic code.",
+        "classification": "minimum_requirement",
+        "priority": 5,
+        "evidence_refs": [
+          "EV-008",
+          "EV-010"
+        ]
+      }
+    ],
+    "operability": [
+      {
+        "id": "DRV-OPS-001",
+        "statement": "The first foundation is local-only and must not require backend, cloud, database or production deployment operations.",
+        "classification": "hard_constraint",
+        "priority": 5,
+        "evidence_refs": [
+          "EV-010",
+          "EV-012"
+        ]
+      }
+    ],
+    "cost": [
+      {
+        "id": "DRV-COST-001",
+        "statement": "Avoid infrastructure, services and abstraction layers that do not directly reduce repeated prototype setup cost.",
+        "classification": "weighted_preference",
+        "priority": 4,
+        "weight": 0.9,
+        "evidence_refs": [
+          "EV-010"
+        ]
+      }
+    ],
+    "team_governance": [
+      {
+        "id": "DRV-TEAM-001",
+        "statement": "Coding agents require short repository rules, deterministic validation and explicit mutation boundaries.",
+        "classification": "minimum_requirement",
+        "priority": 5,
+        "evidence_refs": [
+          "EV-004",
+          "EV-010"
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "id": "DRV-DEL-001",
+        "statement": "The prototype lab should be isolated from the production web repository so experimental churn does not enlarge its CI and release blast radius.",
+        "classification": "minimum_requirement",
+        "priority": 5,
+        "evidence_refs": [
+          "EV-002",
+          "EV-003",
+          "EV-012"
+        ]
+      }
+    ],
+    "platform": [
+      {
+        "id": "DRV-PLAT-001",
+        "statement": "No standalone game engine or Minecraft loader may be selected while MCL-1 remains open under current project governance.",
+        "classification": "hard_constraint",
+        "priority": 5,
+        "evidence_refs": [
+          "EV-004",
+          "EV-005",
+          "EV-009"
+        ]
+      },
+      {
+        "id": "DRV-PLAT-002",
+        "statement": "Third-person local gameplay is the current user preference for the first playable experiment, but the architecture concept must not hard-code camera perspective into shared contracts.",
+        "classification": "assumption",
+        "priority": 4,
+        "evidence_refs": [
+          "EV-011"
+        ]
+      }
+    ]
+  },
+  "data_classes": [
+    "experiment specifications",
+    "mechanic tunables",
+    "asset registry metadata",
+    "prototype-only screenshots/logs"
+  ],
+  "integrations": [
+    "future runtime adapter only; none selected in this concept"
+  ],
+  "quality_scenarios": [
+    {
+      "id": "QS-001",
+      "attribute": "modifiability",
+      "source": "coding agent",
+      "stimulus": "adds a new prototype experiment",
+      "environment": "normal local development",
+      "artifact": "experiment catalog",
+      "response": "the experiment is added without editing existing experiment implementations",
+      "response_measure": "binary pass: changes are limited to experiments/<id> plus explicit registry/contract files and validation passes",
+      "priority": "minimum_requirement",
+      "evidence_refs": [
+        "EV-010"
+      ]
+    },
+    {
+      "id": "QS-002",
+      "attribute": "asset-replaceability",
+      "source": "designer or coding agent",
+      "stimulus": "replaces a placeholder creature or environment asset",
+      "environment": "normal local development",
+      "artifact": "asset registry",
+      "response": "the experiment resolves the replacement through the same stable asset id",
+      "response_measure": "binary pass: no gameplay mechanic source file changes are required for the replacement",
+      "priority": "minimum_requirement",
+      "evidence_refs": [
+        "EV-008",
+        "EV-010"
+      ]
+    },
+    {
+      "id": "QS-003",
+      "attribute": "tuneability",
+      "source": "playtester or coding agent",
+      "stimulus": "changes a gameplay parameter such as hearing radius, movement speed or alert delay",
+      "environment": "prototype iteration",
+      "artifact": "experiment configuration",
+      "response": "the parameter can be changed without editing runtime-adapter internals",
+      "response_measure": "binary pass: the change is expressible in experiment tunables/config only",
+      "priority": "minimum_requirement",
+      "evidence_refs": [
+        "EV-010"
+      ]
+    },
+    {
+      "id": "QS-004",
+      "attribute": "governance",
+      "source": "prototype author",
+      "stimulus": "implements a tentative or ambiguous design idea",
+      "environment": "prototype planning and review",
+      "artifact": "experiment metadata",
+      "response": "the experiment records design status and source references and does not claim canon",
+      "response_measure": "binary pass: design_status and source_refs are mandatory and schema-valid",
+      "priority": "hard_constraint",
+      "evidence_refs": [
+        "EV-006",
+        "EV-008"
+      ]
+    },
+    {
+      "id": "QS-005",
+      "attribute": "isolation",
+      "source": "prototype foundation change",
+      "stimulus": "the prototype lab is scaffolded",
+      "environment": "planning/dry-run",
+      "artifact": "DYAI2025/MC_legends web repository",
+      "response": "the existing production web source, package manifest, tsconfig and CI remain unchanged",
+      "response_measure": "binary pass: zero changed files in DYAI2025/MC_legends for the separate-repository option",
+      "priority": "minimum_requirement",
+      "evidence_refs": [
+        "EV-002",
+        "EV-003",
+        "EV-012"
+      ]
+    },
+    {
+      "id": "QS-006",
+      "attribute": "agent-handoff",
+      "source": "fresh coding-agent session",
+      "stimulus": "opens a clean prototype-lab checkout",
+      "environment": "local development",
+      "artifact": "repository instructions and validation commands",
+      "response": "the agent can identify allowed scope, protected boundaries, experiment template and gates without reading the production web implementation",
+      "response_measure": "binary pass: AGENTS.md points to one ADR, one experiment contract, one asset contract and exact validation commands",
+      "priority": "minimum_requirement",
+      "evidence_refs": [
+        "EV-004",
+        "EV-010"
+      ]
+    }
+  ],
+  "existing_commitments": [
+    "DYAI2025/MC_legends is the active web repository.",
+    "Confluence MLOA is the game-design SSoT for confirmed decisions.",
+    "Jira MCL-1 remains the product-format gate.",
+    "Current web architecture is Next.js ports/adapters and is explicitly web-only."
+  ],
+  "evidence_refs": [
+    "EV-001",
+    "EV-002",
+    "EV-003",
+    "EV-004",
+    "EV-005",
+    "EV-006",
+    "EV-007",
+    "EV-008",
+    "EV-009",
+    "EV-010",
+    "EV-011",
+    "EV-012"
+  ],
+  "assumptions": [
+    {
+      "id": "ASM-001",
+      "statement": "A separate prototype-lab repository is acceptable if it remains project-linked by source references rather than runtime coupling.",
+      "severity": "medium",
+      "status": "accepted",
+      "owner": null,
+      "review_trigger": "User or governance requires a monorepo instead."
+    },
+    {
+      "id": "ASM-002",
+      "statement": "Third-person is the first prototype camera preference, not a canon game-format decision.",
+      "severity": "low",
+      "status": "accepted",
+      "owner": null,
+      "review_trigger": "The user changes the prototype camera preference."
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "CONFLICT-001",
+      "statement": "The user wants an executable prototype basis now, while current AGENTS.md and open MCL-1 prohibit selecting a standalone game engine.",
+      "severity": "high",
+      "status": "blocked",
+      "owner": null,
+      "review_trigger": "MCL-1 is resolved or project governance explicitly permits a disposable non-canonical prototype runtime."
+    }
+  ],
+  "missing_information": [
+    {
+      "id": "MISS-001",
+      "statement": "No approved runtime/engine adapter exists for the prototype lab.",
+      "severity": "high",
+      "status": "open",
+      "owner": null,
+      "review_trigger": "Engine governance gate is cleared and an adapter is researched/validated."
+    },
+    {
+      "id": "MISS-002",
+      "statement": "Branch protection/rulesets for a future prototype repository do not exist because the repository has not been created.",
+      "severity": "medium",
+      "status": "open",
+      "owner": null,
+      "review_trigger": "Prototype repository is created."
+    },
+    {
+      "id": "MISS-003",
+      "statement": "Final asset license policy for prototype-only third-party assets is not yet recorded.",
+      "severity": "medium",
+      "status": "open",
+      "owner": null,
+      "review_trigger": "First external asset pack is selected."
+    }
+  ]
+}

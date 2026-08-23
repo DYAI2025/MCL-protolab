@@ -1,0 +1,136 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-23T09:27:10Z",
+  "entries": [
+    {
+      "id": "EV-001",
+      "claim": "DYAI2025/MC_legends is active, public, default branch main, head 614966f215a07aac9cd8ac2d763308b03c64096f during this readback.",
+      "classification": "project_internal",
+      "label": "OBSERVED",
+      "confidence": 5,
+      "source": "GitHub get_repo + recent commits, 2026-08-23",
+      "scope": "DYAI2025/MC_legends",
+      "limitations": [
+        "Remote readback only; local worktree state not available."
+      ]
+    },
+    {
+      "id": "EV-002",
+      "claim": "The repository is a single-package Next.js web application with Node 24/npm 11 and production web dependencies.",
+      "classification": "project_internal",
+      "label": "OBSERVED",
+      "confidence": 5,
+      "source": "GitHub package.json main",
+      "scope": "DYAI2025/MC_legends",
+      "limitations": []
+    },
+    {
+      "id": "EV-003",
+      "claim": "Root tsconfig includes **/*.ts and **/*.tsx recursively.",
+      "classification": "project_internal",
+      "label": "OBSERVED",
+      "confidence": 5,
+      "source": "GitHub tsconfig.json main",
+      "scope": "DYAI2025/MC_legends",
+      "limitations": []
+    },
+    {
+      "id": "EV-004",
+      "claim": "Current repository instructions prohibit selecting a Minecraft loader or standalone-game engine until MCL-1 is resolved.",
+      "classification": "project_internal",
+      "label": "PROJECT_DECISION",
+      "confidence": 5,
+      "source": "GitHub AGENTS.md main",
+      "scope": "DYAI2025/MC_legends",
+      "limitations": []
+    },
+    {
+      "id": "EV-005",
+      "claim": "Confluence states that product format and game engine/loader are not decided and MCL-1 is the macro gate.",
+      "classification": "project_internal",
+      "label": "PROJECT_DECISION",
+      "confidence": 5,
+      "source": "Confluence MLOA page 01",
+      "scope": "MC Legends product",
+      "limitations": [
+        "Page dated 2026-08-11."
+      ]
+    },
+    {
+      "id": "EV-006",
+      "claim": "Game design contains multiple open systems and Zhalm/Druhen material with STATED/TENTATIVE/AMBIGUOUS/CONFLICT status.",
+      "classification": "project_internal",
+      "label": "PROJECT_DECISION",
+      "confidence": 5,
+      "source": "Confluence MLOA page 02",
+      "scope": "MC Legends game design",
+      "limitations": [
+        "Many mechanics are intentionally not canon."
+      ]
+    },
+    {
+      "id": "EV-007",
+      "claim": "The Next.js ports/adapters architecture is explicitly a web-foundation decision only.",
+      "classification": "project_internal",
+      "label": "PROJECT_DECISION",
+      "confidence": 5,
+      "source": "Confluence MLOA page 05 + repository ADR-0001",
+      "scope": "MC Legends web foundation",
+      "limitations": []
+    },
+    {
+      "id": "EV-008",
+      "claim": "The visual system calls for reusable assets, a registry/mapping, version, provenance, status and fallback behavior.",
+      "classification": "project_internal",
+      "label": "PROJECT_DECISION",
+      "confidence": 5,
+      "source": "Confluence MLOA page 14",
+      "scope": "visual/asset system",
+      "limitations": [
+        "Written for website visual system; reuse in prototype lab is an inference."
+      ]
+    },
+    {
+      "id": "EV-009",
+      "claim": "Jira MCL-1 is currently Zu erledigen with Highest priority and explicitly keeps engine/framework selection out of scope.",
+      "classification": "project_internal",
+      "label": "OBSERVED",
+      "confidence": 5,
+      "source": "Jira MCL-1 readback 2026-08-23",
+      "scope": "MC Legends product-format gate",
+      "limitations": []
+    },
+    {
+      "id": "EV-010",
+      "claim": "User requests a reusable local prototype basis for short agent-driven iterations, asset replacement and direct gameplay testing, not an alpha/beta production foundation.",
+      "classification": "user_provided",
+      "label": "PROJECT_DECISION",
+      "confidence": 5,
+      "source": "current conversation 2026-08-23",
+      "scope": "prototype-lab purpose",
+      "limitations": []
+    },
+    {
+      "id": "EV-011",
+      "claim": "User currently prefers third-person perspective for the prototype/game direction.",
+      "classification": "user_provided",
+      "label": "PROJECT_DECISION",
+      "confidence": 5,
+      "source": "current conversation 2026-08-23",
+      "scope": "prototype experience",
+      "limitations": [
+        "Not yet recorded as Confluence canon."
+      ]
+    },
+    {
+      "id": "EV-012",
+      "claim": "Current CI is production-web oriented and runs PostgreSQL, Next build, browser smoke tests, secret scans and dependency audit.",
+      "classification": "project_internal",
+      "label": "OBSERVED",
+      "confidence": 5,
+      "source": "GitHub .github/workflows/ci.yml main",
+      "scope": "DYAI2025/MC_legends CI",
+      "limitations": []
+    }
+  ]
+}

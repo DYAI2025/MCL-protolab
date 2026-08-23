@@ -1,0 +1,147 @@
+{
+  "schema_version": "1.0",
+  "manifest_id": "BM-002",
+  "generated_at": "2026-08-23T09:27:10Z",
+  "repository": "DYAI2025/mcl-prototype-lab",
+  "target_branch": "chore/prototype-lab-foundation",
+  "mode": "BUILD_DRY_RUN",
+  "architecture_decision": "AD-002",
+  "adr_reference": "docs/architecture/ADR-0002-prototype-lab.md",
+  "adapter": {
+    "id": "ADAPTER_MISSING",
+    "version": "0",
+    "verification_status": "missing"
+  },
+  "tool_versions": {
+    "node": "24.x proposed for validation tooling; reverify before build",
+    "npm": "11.x proposed; reverify before build",
+    "runtime-engine": "BLOCKED by MCL-1"
+  },
+  "create_files": [
+    "README.md",
+    "AGENTS.md",
+    "docs/architecture/ADR-0002-prototype-lab.md",
+    "docs/architecture/C4.md",
+    "docs/architecture/project-intake.json",
+    "docs/architecture/architecture-decision.json",
+    "docs/architecture/evidence-ledger.json",
+    "docs/experiments/EXPERIMENT_CONTRACT.md",
+    "docs/assets/ASSET_REGISTRY_CONTRACT.md",
+    "schemas/experiment.schema.json",
+    "schemas/asset-registry.schema.json",
+    "experiments/_template/experiment.json",
+    "assets/registry/assets.example.json",
+    "runtime-adapters/README.md"
+  ],
+  "change_files": [],
+  "protected_files": [],
+  "commands": [
+    {
+      "id": "CMD-001",
+      "argv": [
+        "npm",
+        "install"
+      ],
+      "cwd": ".",
+      "purpose": "Install the future validation/tooling dependencies after package.json exists.",
+      "network_allowed": true,
+      "timeout_seconds": 600
+    },
+    {
+      "id": "CMD-002",
+      "argv": [
+        "npm",
+        "run",
+        "validate:contracts"
+      ],
+      "cwd": ".",
+      "purpose": "Validate experiment and asset registry contracts.",
+      "network_allowed": false,
+      "timeout_seconds": 120
+    },
+    {
+      "id": "CMD-003",
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": ".",
+      "purpose": "Run contract and architecture tests for the future foundation.",
+      "network_allowed": false,
+      "timeout_seconds": 120
+    }
+  ],
+  "external_downloads": [],
+  "dependency_changes": [
+    "No runtime/game-engine dependency may be added until the engine governance gate clears."
+  ],
+  "database_migrations": [],
+  "ci_changes": [
+    "Future new repository CI may validate contracts and tests only; no change to DYAI2025/MC_legends CI is allowed by this manifest."
+  ],
+  "infrastructure_changes": [],
+  "expected_artifacts": [
+    "docs/architecture/project-intake.json",
+    "docs/architecture/architecture-decision.json",
+    "docs/architecture/C4.md",
+    "experiments/_template/experiment.json",
+    "assets/registry/assets.example.json"
+  ],
+  "validation_gates": [
+    {
+      "id": "GATE-001",
+      "required": true,
+      "argv": [
+        "npm",
+        "run",
+        "validate:contracts"
+      ],
+      "cwd": ".",
+      "timeout_seconds": 120,
+      "report_path": "reports/contracts.json"
+    },
+    {
+      "id": "GATE-002",
+      "required": true,
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": ".",
+      "timeout_seconds": 120,
+      "report_path": "reports/tests.txt"
+    },
+    {
+      "id": "GATE-003",
+      "required": true,
+      "argv": [
+        "git",
+        "diff",
+        "--exit-code",
+        "--",
+        "../MC_legends"
+      ],
+      "cwd": ".",
+      "timeout_seconds": 30,
+      "report_path": null
+    }
+  ],
+  "cleanup": [
+    "Delete the temporary dry-run directory if any required gate fails.",
+    "Do not create or modify a remote repository during BUILD_DRY_RUN."
+  ],
+  "rollback": [
+    "Remove the isolated dry-run directory or local worktree; no production repository files are changed."
+  ],
+  "known_risks": [
+    "Runtime adapter is intentionally missing, so this manifest cannot produce a playable 3D game yet.",
+    "Exact package versions and runtime commands require a fresh RESEARCH/ADAPTER_BUILD step before execution."
+  ],
+  "stop_conditions": [
+    "Any step requires modifying DYAI2025/MC_legends.",
+    "An engine/runtime dependency is requested while MCL-1 remains unresolved and no exception exists.",
+    "A command, package or version is not verified by the selected adapter.",
+    "A third-party asset lacks license/provenance metadata."
+  ],
+  "authorization_evidence": null
+}

@@ -1,0 +1,20 @@
+{
+  "id": "experiment-template",
+  "title": "Prototype Experiment Template",
+  "hypothesis": "Replace with one falsifiable gameplay hypothesis.",
+  "design_status": "TENTATIVE",
+  "source_refs": [
+    "MLOA:02-or-Jira-key"
+  ],
+  "runtime_adapter": null,
+  "mechanics": [],
+  "assets": [],
+  "tunables": {},
+  "success_signals": [
+    "Define one observable sign that supports the hypothesis."
+  ],
+  "kill_criteria": [
+    "Define one observable result that means stop or redesign."
+  ],
+  "reset_strategy": "Reset must restore the experiment to a known initial state without backend data."
+}

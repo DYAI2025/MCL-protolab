@@ -1,0 +1,349 @@
+{
+  "schema_version": "1.0",
+  "decision_id": "AD-002",
+  "generated_at": "2026-08-23T09:27:10Z",
+  "status": "conditional",
+  "context": "Define the first reusable MC Legends prototype-lab foundation without coupling experimental gameplay code to the production web repository or pre-empting unresolved MCL-1 engine/product-format governance.",
+  "hard_constraints": [
+    "HC-001 no standalone game engine or Minecraft loader selection before MCL-1/governance clearance",
+    "HC-002 no runtime dependency on the production web app/backend",
+    "HC-003 prototypes must remain disposable and isolated",
+    "HC-004 prototype design status must not silently become canon",
+    "HC-005 asset provenance and stable ids are required",
+    "HC-006 no production backend/cloud infrastructure in the first prototype foundation"
+  ],
+  "quality_scenarios": [
+    "QS-001",
+    "QS-002",
+    "QS-003",
+    "QS-004",
+    "QS-005",
+    "QS-006"
+  ],
+  "candidates": [
+    {
+      "id": "CAND-001",
+      "name": "Separate engine-neutral prototype-lab repository",
+      "kind": "minimum_viable_architecture",
+      "summary": "A dedicated repository contains experiment contracts, asset registry, validation, agent rules and an empty runtime-adapter slot. Actual engine integration is deferred until the governance gate clears.",
+      "feasibility": "conditional",
+      "hard_constraint_results": [
+        {
+          "constraint_id": "HC-001",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-004",
+            "EV-009"
+          ]
+        },
+        {
+          "constraint_id": "HC-002",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-002",
+            "EV-012"
+          ]
+        },
+        {
+          "constraint_id": "HC-003",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-010"
+          ]
+        },
+        {
+          "constraint_id": "HC-004",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-006",
+            "EV-008"
+          ]
+        },
+        {
+          "constraint_id": "HC-005",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-008"
+          ]
+        },
+        {
+          "constraint_id": "HC-006",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-010"
+          ]
+        }
+      ],
+      "scores": {
+        "requirement_fit": 4.8,
+        "modifiability": 4.8,
+        "delivery_speed_after_gate": 4.5,
+        "isolation": 5.0,
+        "reversibility": 5.0,
+        "evidence_strength": 4.5
+      },
+      "risks": [
+        "A separate repository can drift from MLOA decisions if source references are not maintained.",
+        "Runtime remains non-playable until an adapter is approved."
+      ],
+      "non_risks": [
+        "Does not alter the existing web CI/deployment unit.",
+        "Can be deleted without changing production web behavior."
+      ],
+      "sensitivity_points": [
+        "MCL-1 outcome",
+        "whether a prototype-runtime exception is approved",
+        "how many mechanics actually repeat across experiments"
+      ],
+      "tradeoff_points": [
+        "Maximum isolation and disposability versus one additional repository to govern."
+      ],
+      "reversibility": "high",
+      "migration_cost": "low",
+      "evidence_strength": 5
+    },
+    {
+      "id": "CAND-002",
+      "name": "Prototype workspace inside DYAI2025/MC_legends",
+      "kind": "balanced_architecture",
+      "summary": "Add a prototype package below the existing web repository and adjust root TypeScript/ESLint/CI boundaries to isolate it.",
+      "feasibility": "conditional",
+      "hard_constraint_results": [
+        {
+          "constraint_id": "HC-001",
+          "status": "satisfied",
+          "notes": "Only if no engine is selected yet.",
+          "evidence_refs": [
+            "EV-004",
+            "EV-009"
+          ]
+        },
+        {
+          "constraint_id": "HC-002",
+          "status": "unknown",
+          "notes": "Same repository and root tooling create avoidable coupling even if runtime dependencies are separated.",
+          "evidence_refs": [
+            "EV-003",
+            "EV-012"
+          ]
+        },
+        {
+          "constraint_id": "HC-003",
+          "status": "unknown",
+          "evidence_refs": [
+            "EV-003"
+          ]
+        },
+        {
+          "constraint_id": "HC-004",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-006"
+          ]
+        },
+        {
+          "constraint_id": "HC-005",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-008"
+          ]
+        },
+        {
+          "constraint_id": "HC-006",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-012"
+          ]
+        }
+      ],
+      "scores": {
+        "requirement_fit": 3.6,
+        "modifiability": 3.4,
+        "delivery_speed_after_gate": 3.6,
+        "isolation": 2.4,
+        "reversibility": 3.2,
+        "evidence_strength": 4.5
+      },
+      "risks": [
+        "Root tsconfig includes all TypeScript files recursively, so prototype files enter existing typecheck scope unless the production toolchain is changed.",
+        "Existing CI is production-web specific and would gain experimental churn."
+      ],
+      "non_risks": [
+        "One repository simplifies discovery and source linking."
+      ],
+      "sensitivity_points": [
+        "Whether repository-wide tooling can be changed without slowing web delivery."
+      ],
+      "tradeoff_points": [
+        "Single-repo discoverability versus blast-radius and CI coupling."
+      ],
+      "reversibility": "medium",
+      "migration_cost": "medium",
+      "evidence_strength": 5
+    },
+    {
+      "id": "CAND-003",
+      "name": "Choose PlayCanvas/Godot/Unity now and scaffold executable runtime",
+      "kind": "assurance_or_scale_architecture",
+      "summary": "Create a real 3D runtime immediately with third-person controller, local play and asset loading.",
+      "feasibility": "infeasible",
+      "hard_constraint_results": [
+        {
+          "constraint_id": "HC-001",
+          "status": "violated",
+          "notes": "MCL-1 is still open and repository instructions explicitly prohibit engine selection.",
+          "evidence_refs": [
+            "EV-004",
+            "EV-009"
+          ]
+        },
+        {
+          "constraint_id": "HC-002",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-010"
+          ]
+        },
+        {
+          "constraint_id": "HC-003",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-010"
+          ]
+        },
+        {
+          "constraint_id": "HC-004",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-006"
+          ]
+        },
+        {
+          "constraint_id": "HC-005",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-008"
+          ]
+        },
+        {
+          "constraint_id": "HC-006",
+          "status": "satisfied",
+          "evidence_refs": [
+            "EV-010"
+          ]
+        }
+      ],
+      "scores": {},
+      "risks": [
+        "Would silently convert a prototype-tool preference into a project engine decision under current governance."
+      ],
+      "non_risks": [
+        "Would produce the fastest path to an immediately playable 3D scene after governance clearance."
+      ],
+      "sensitivity_points": [
+        "MCL-1 or prototype-runtime exception"
+      ],
+      "tradeoff_points": [
+        "Immediate playability versus explicit project decision integrity."
+      ],
+      "reversibility": "medium",
+      "migration_cost": "medium",
+      "evidence_strength": 5
+    }
+  ],
+  "preferred_candidate_id": "CAND-001",
+  "strongest_counterargument": "A separate repository creates another place to maintain and may encourage duplicate contracts; a carefully isolated workspace in the existing repository could keep all project knowledge together. This becomes decisive only if repository/tooling coupling is explicitly accepted and CI can exclude prototype churn without weakening production gates.",
+  "decision_rationale": [
+    "The existing repository is now an active production-oriented web system with PostgreSQL, CI and deployment work, not an empty bootstrap.",
+    "The root TypeScript configuration includes all TypeScript files recursively, making an embedded prototype package non-isolated by default.",
+    "Confluence explicitly treats the current Next.js architecture as web-only and keeps game technology open.",
+    "The visual asset design already supports a registry/provenance approach that can be reused without coupling runtimes.",
+    "A separate disposable lab best matches rapid experimentation and low migration cost."
+  ],
+  "rejected_alternatives": [
+    "CAND-002 remains possible but is inferior while the web repository has global TypeScript and web-specific CI scope.",
+    "CAND-003 is blocked until MCL-1 or an explicit non-canonical prototype-runtime exception clears engine selection."
+  ],
+  "consequences": [
+    "Prototype experiments live outside the production web repository.",
+    "The first foundation can be created as contracts, schemas, docs and validation without selecting an engine.",
+    "A runtime adapter is a later controlled decision, not an implicit part of this concept.",
+    "Shared mechanic modules are not created speculatively; promotion requires demonstrated reuse.",
+    "Prototype outcomes can inform MCL design decisions but do not write canon automatically."
+  ],
+  "risks": [
+    {
+      "id": "RISK-001",
+      "statement": "Runtime playability is delayed while engine selection is blocked.",
+      "likelihood": "high",
+      "impact": "high",
+      "mitigation": "Resolve MCL-1 or approve a narrowly scoped disposable prototype-runtime exception."
+    },
+    {
+      "id": "RISK-002",
+      "statement": "A separate lab can drift from Confluence design status.",
+      "likelihood": "medium",
+      "impact": "medium",
+      "mitigation": "Require source_refs and design_status in every experiment contract."
+    },
+    {
+      "id": "RISK-003",
+      "statement": "Premature shared-mechanic abstraction could slow experiments.",
+      "likelihood": "medium",
+      "impact": "medium",
+      "mitigation": "Default all logic to experiment-local; promote only after reuse in at least two experiments."
+    },
+    {
+      "id": "RISK-004",
+      "statement": "Third-party assets can introduce license/provenance ambiguity.",
+      "likelihood": "medium",
+      "impact": "high",
+      "mitigation": "Require license/source/provenance fields in the asset registry before runtime use."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "ASM-001",
+      "statement": "The prototype lab is a disposable learning system and is not intended to evolve into the production game repository.",
+      "confidence": 5,
+      "review_trigger": "The user explicitly changes the purpose from prototype lab to production foundation."
+    },
+    {
+      "id": "ASM-002",
+      "statement": "Third-person remains the preferred first playable perspective.",
+      "confidence": 4,
+      "review_trigger": "The user selects a different camera for the first experiment."
+    }
+  ],
+  "review_triggers": [
+    "MCL-1 is resolved",
+    "A prototype-runtime exception is approved",
+    "The first runtime adapter is researched and validated",
+    "Two experiments need the same mechanic",
+    "Prototype work begins modifying production web files"
+  ],
+  "migration_signals": [
+    "Promote an experiment-local mechanic to shared only after at least two experiments depend on the same behavior contract.",
+    "Create a production-game architecture only after product-format and engine decisions are explicitly made."
+  ],
+  "diagram_paths": [
+    "docs/architecture/C4.md"
+  ],
+  "adr_paths": [
+    "docs/architecture/ADR-0002-prototype-lab.md"
+  ],
+  "evidence_refs": [
+    "EV-001",
+    "EV-002",
+    "EV-003",
+    "EV-004",
+    "EV-005",
+    "EV-006",
+    "EV-007",
+    "EV-008",
+    "EV-009",
+    "EV-010",
+    "EV-011",
+    "EV-012"
+  ]
+}

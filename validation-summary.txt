@@ -1,0 +1,9 @@
+Validation run: 2026-08-23T09:27:10Z
+Mode: PLAN
+project-intake: passed
+architecture-decision: passed
+build-manifest: passed
+experiment-template-schema: passed
+asset-registry-schema: passed
+runtime-build: not_run (adapter missing / MCL-1 gate)
+github-mutation: not_run (PLAN mode)

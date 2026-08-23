@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "assets"
+  ],
+  "properties": {
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "asset_id",
+          "kind",
+          "path",
+          "format",
+          "status",
+          "version",
+          "source",
+          "license",
+          "provenance",
+          "fallback_asset_id"
+        ],
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]+$"
+          },
+          "kind": {
+            "enum": [
+              "character",
+              "creature",
+              "environment",
+              "prop",
+              "audio",
+              "fx",
+              "ui"
+            ]
+          },
+          "path": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "placeholder",
+              "candidate",
+              "approved_for_prototype"
+            ]
+          },
+          "version": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "license": {
+            "type": "string"
+          },
+          "provenance": {
+            "type": "string"
+          },
+          "fallback_asset_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

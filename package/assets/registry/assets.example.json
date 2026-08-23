@@ -1,0 +1,28 @@
+{
+  "assets": [
+    {
+      "asset_id": "character.hero.placeholder",
+      "kind": "character",
+      "path": "assets/placeholders/hero.glb",
+      "format": "glb",
+      "status": "placeholder",
+      "version": "0.1.0",
+      "source": "local placeholder",
+      "license": "project-owned or verified-compatible only",
+      "provenance": "prototype placeholder; not final art",
+      "fallback_asset_id": null
+    },
+    {
+      "asset_id": "creature.zhalm.large.placeholder",
+      "kind": "creature",
+      "path": "assets/placeholders/zhalm-large.glb",
+      "format": "glb",
+      "status": "placeholder",
+      "version": "0.1.0",
+      "source": "local placeholder",
+      "license": "project-owned or verified-compatible only",
+      "provenance": "prototype placeholder for a TENTATIVE/STATED design branch; not canon art",
+      "fallback_asset_id": null
+    }
+  ]
+}
