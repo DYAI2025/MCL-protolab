@@ -28,7 +28,7 @@ Effectiveness here is not "do the tasks in architecture-diagram order". It is: *
 | Phase | Tasks | Output |
 |---|---|---|
 | 0 — Prep | 0 | branch, governance decision, Node pinned |
-| 1 — Walking skeleton (**risk gate**) | 1–3 | app boots, physics runs, all gates green, screenshot committed |
+| 1 — Walking skeleton (**risk gate**) | 1–3, 2b, 2c | app boots, physics runs, all gates green + no blind spots, screenshot committed |
 | 2 — Core logic (TDD) | 4–7 | events, tunables, experiment registry, asset registry |
 | 3 — Runtime integration | 8–11 | third-person player+camera, playground, inspector, reset |
 | 4 — Creature FX gallery | 12–15 | concept loader, FX kit, gallery, 4 creature states |
@@ -43,6 +43,7 @@ Every one of these was verified against `playcanvas@2.21.4` source or the curren
 - **Serve ammo from `public/`, root-absolute.** `WasmModule` injects the glue via a classic `<script src>` tag and hands Emscripten `locateFile: () => config.wasmUrl`. Vite's `?url` / `?init` wasm handling actively breaks this (inlining a `.wasm` under `assetsInlineLimit` in a production build kills it).
 - **Playwright `webServer.url` must be `http://localhost:…`, not `127.0.0.1`.** Measured: with `127.0.0.1` the run times out after 120 s while Vite is demonstrably serving.
 - **PlayCanvas resolves the `development` export condition in `vite dev`** → the debug build, with extra asserts and console output. A smoke test that asserts "zero console errors" should run against `vite preview` (production build), or filter known-benign debug lines. Decide this in Task 3, not at the end.
+- **`erasableSyntaxOnly: true` bans enums, namespaces and parameter properties.** Measured: `export enum MovementState {...}` → `error TS1294: This syntax is not allowed when 'erasableSyntaxOnly' is enabled.` Use string-literal unions instead (`'idle' | 'walk' | 'jog'`), which is what Task 10's `InspectorSnapshot` already does.
 - **`typescript` is pinned to 6.0.3, not 7.x** — `typescript-eslint@8.67.0` declares peer `>=4.8.4 <6.1.0`. TS 7 breaks lint.
 - **Node 22.23.1 (what is currently on this machine) is below the engine template's `engines.node >= 22.23.2`.** Use the pinned 24.19.0 via `nvm`.
 - **`particlesystem.rate` is an interval in seconds, not particles per second.** Smaller = more particles.
@@ -341,7 +342,7 @@ git commit -m "chore: scaffold Vite + PlayCanvas 2.21.4 baseline with provenance
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true
   },
-  "include": ["src", "experiments", "vite.config.ts"]
+  "include": ["src", "experiments", "e2e", "vite.config.ts", "playwright.config.ts"]
 }
 ```
 
@@ -443,6 +444,13 @@ module.exports = {
       comment: 'Only src/runtime may know the engine. Keeps core unit-testable without a browser.',
       from: { path: '^src/core/' },
       to: { path: 'node_modules/playcanvas' },
+    },
+    {
+      name: 'shell-is-the-only-composition-root',
+      severity: 'error',
+      comment: 'Only src/shell may wire experiments to the runtime. Keeps the composition root single and findable.',
+      from: { path: '^src/(runtime|core)/' },
+      to: { path: '^src/shell/' },
     },
     {
       name: 'no-mc-legends-dependency',
@@ -566,6 +574,133 @@ npm run boundaries; echo "EXIT=$?"   # expect: ✔ no dependency violations foun
 git add tsconfig.json vite.config.ts eslint.config.js .dependency-cruiser.cjs playwright.config.ts src/core/version.ts src/core/version.test.ts
 git commit -m "chore: wire typecheck, lint, import-boundary, unit and build gates"
 ```
+
+---
+
+## Task 2b: Close the static-gate blind spots
+
+Task 2's gates are real but two areas sit outside all of them. Both were measured on `489eb6f`. If Task 2 was already executed with the older config, this task applies the corrections to the existing branch; a fresh run gets them from Task 2 directly and can skip to Step 3.
+
+**Files:**
+- Modify: `tsconfig.json` — add `e2e` and `playwright.config.ts` to `include`
+- Modify: `.dependency-cruiser.cjs` — add the `shell-is-the-only-composition-root` rule
+
+**Step 1: Prove the blind spot before fixing it**
+
+```bash
+printf "\nconst broken: number = 'definitely not a number';\nvoid broken;\n" >> e2e/smoke.spec.ts
+npm run typecheck; echo "EXIT=$?"
+npm run lint; echo "EXIT=$?"
+```
+Measured on `489eb6f`: **both exit 0**. A blatant type error in the smoke spec is invisible to every static gate. ESLint sees the file, but `tseslint.configs.recommended` is the non-type-checked preset, so assignment errors are `tsc`'s job — and `tsconfig.include` never listed `e2e`.
+
+This matters more here than in a normal repo: Tasks 3, 16 and 19 make the e2e specs the **primary runtime evidence** for `runtime_verified`. Playwright transpiles TypeScript regardless of type errors, so a type-broken evidence test still runs and can silently assert less than intended.
+
+**Step 2: Widen the include and prove the gate now bites**
+
+```json
+"include": ["src", "experiments", "e2e", "vite.config.ts", "playwright.config.ts"]
+```
+
+```bash
+npm run typecheck; echo "EXIT=$?"
+```
+Expected with the canary still in place: `EXIT=2` and `e2e/smoke.spec.ts(15,7): error TS2322: Type 'string' is not assignable to type 'number'.`
+
+Then remove the canary and confirm `EXIT=0`. Verified 2026-08-24: `lint`, `test`, `build` and `e2e` are unaffected — Playwright and Vitest types coexist in one program without conflict.
+
+**Step 3: Give `src/shell/` a dependency-cruiser rule**
+
+`eslint.config.js` declares a `shell` element, but `.dependency-cruiser.cjs` has **zero** rules mentioning it. Task 11 creates `src/shell/bootstrap.ts` as the composition root that imports runtime, core *and* experiments.
+
+That asymmetry is the risk: this plan already measured ESLint boundaries **silently passing** on extensionless imports without the resolver, while dependency-cruiser caught every case. Shell would be policed only by the mechanism with the known blind spot.
+
+Add to `forbidden`:
+
+```javascript
+{
+  name: 'shell-is-the-only-composition-root',
+  severity: 'error',
+  comment: 'Only src/shell may wire experiments to the runtime. Keeps the composition root single and findable.',
+  from: { path: '^src/(runtime|core)/' },
+  to: { path: '^src/shell/' },
+},
+```
+
+**Step 4: Canary the new rule**
+
+Per the standing rule — a gate that has never failed is `not_run`, not `passed`:
+
+```bash
+mkdir -p src/shell && echo 'export const s = 1;' > src/shell/target.ts
+printf "import { s } from '../shell/target.ts';\nexport const y = s;\n" > src/core/canary.ts
+npm run boundaries; echo "EXIT=$?"
+```
+Expected: `error shell-is-the-only-composition-root: src/core/canary.ts → src/shell/target.ts` and `EXIT=1`. Remove the canary, confirm `EXIT=0`.
+
+**Step 5: Run the full chain and commit**
+
+```bash
+npm run typecheck && npm run lint && npm run boundaries && npm test && npm run build && npm run e2e
+git add tsconfig.json .dependency-cruiser.cjs
+git commit -m "fix: typecheck e2e specs and guard the shell composition root"
+```
+
+---
+
+## Task 2c: CI workflow — or a documented decision not to have one
+
+Every gate in this repo is currently manual. `.github/workflows/` does not exist, so a reviewer looking at the draft PR sees **no automated signal at all**, and nothing runs the chain except a human remembering to.
+
+On a branch whose central discipline is *"a gate that has never failed proves nothing"*, leaving the gates unrun-by-default is the same class of problem one level up.
+
+**This is a genuine either/or — decide it explicitly, do not drift into it.**
+
+**Option A — add CI (recommended).** A workflow running the existing chain on push and PR. No new gates, no new dependencies; it runs exactly what a developer runs.
+
+**Files:** Create `.github/workflows/gates.yml`
+
+```yaml
+name: gates
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run boundaries
+      - run: npm test
+      - run: npm run build
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-evidence
+          path: |
+            artifacts/screens/
+            artifacts/test-results/
+```
+
+Two things to verify rather than assume, because both were flagged as unknowns during research:
+
+1. **Headless WebGL on a Linux runner.** All Playwright/WebGL measurements for this plan were taken on macOS arm64. SwiftShader behaviour on `ubuntu-latest` was **not** verified. Run the probe there before trusting the `e2e` step; if WebGL is unavailable, the honest move is to split `e2e` into a separate non-blocking job rather than weaken the assertion.
+2. **The blocked postinstall.** `npm install` blocks a postinstall for `unrs-resolver`, a transitive dependency of `eslint-import-resolver-typescript` — which the boundaries lint rule *requires*. On macOS arm64 the prebuilt optional binding loads anyway. A CI platform without a prebuilt binding may need `npm ci --foreground-scripts` or an explicit approval step. If the boundaries rule silently reports nothing in CI, suspect this first.
+
+**Option B — no CI, stated deliberately.** Acceptable for a disposable lab where Task 18's fresh-clone gate is the real check. If chosen, record it in `docs/architecture/ADR-0003-runtime-foundation.md` as a decision with its consequence: *every gate result in this repo is a human-attested claim, and the PR carries no independent signal.*
+
+**Do not leave this undecided.** An absent workflow that nobody chose reads identically to one that was forgotten.
 
 ---
 
@@ -1784,6 +1919,15 @@ git commit -m "feat: debug inspector overlay with live tunable sliders and reset
 
 **Files:**
 - Modify: `src/shell/bootstrap.ts` (create if absent), `src/runtime/scene-context.ts`
+
+**Step 0: Confirm the shell boundary rule is in place**
+
+`src/shell/` is created here for the first time. Task 2b added `shell-is-the-only-composition-root` to `.dependency-cruiser.cjs`; confirm it exists before writing shell code, so the composition root is policed by dependency-cruiser and not only by ESLint boundaries (which was measured silently passing on extensionless imports).
+
+```bash
+grep -c 'shell-is-the-only-composition-root' .dependency-cruiser.cjs   # expect 1
+npm run boundaries; echo "EXIT=$?"                                      # expect 0
+```
 
 **Step 1: Wire the reset path**
 
