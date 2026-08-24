@@ -187,8 +187,7 @@ Exact version set — this combination was installed together and passed every g
     "lint": "eslint .",
     "boundaries": "depcruise --config .dependency-cruiser.cjs --output-type err src experiments",
     "test": "vitest run",
-    "e2e": "playwright test",
-    "validate:contracts": "node scripts/validate-contracts.mjs"
+    "e2e": "playwright test"
   },
   "dependencies": {
     "playcanvas": "2.21.4"
@@ -1196,6 +1195,7 @@ The repo already ships `schemas/asset-registry.schema.json`. This task makes gam
 - Create: `src/core/assets/asset-registry.ts`, `src/core/assets/asset-registry.test.ts`
 - Create: `scripts/validate-contracts.mjs`
 - Create: `assets/registry/assets.json`
+- Modify: `package.json` — add the `validate:contracts` script (Step 5b)
 
 **Step 1: Write the failing test**
 
@@ -1377,6 +1377,16 @@ console.log(`${pairs.length - failed}/${pairs.length} documents valid`);
 process.exit(failed === 0 ? 0 : 1);
 ```
 
+**Step 5b: Register the npm script — not before now**
+
+Only now does `package.json` gain the entry, because only now does its target exist. Add to `scripts`:
+
+```json
+"validate:contracts": "node scripts/validate-contracts.mjs"
+```
+
+Registering it earlier advertises a command that exits 1 with `MODULE_NOT_FOUND` — a knowingly dead gate, and exactly the kind of "green by assertion" surface this plan exists to prevent. Verify the script is absent from `package.json` in every task before this one.
+
 **Step 6: Run both**
 
 ```bash
@@ -1388,7 +1398,7 @@ Expected: 5 unit tests passed; validator prints one `valid:` line per document a
 **Step 7: Commit**
 
 ```bash
-git add src/core/assets scripts/validate-contracts.mjs assets/registry/assets.json
+git add src/core/assets scripts/validate-contracts.mjs assets/registry/assets.json package.json
 git commit -m "feat(core): asset registry resolver with fallback chain and a repo-native schema gate"
 ```
 

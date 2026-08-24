@@ -11,8 +11,7 @@
     "lint": "eslint .",
     "boundaries": "depcruise --config .dependency-cruiser.cjs --output-type err src experiments",
     "test": "vitest run",
-    "e2e": "playwright test",
-    "validate:contracts": "node scripts/validate-contracts.mjs"
+    "e2e": "playwright test"
   },
   "dependencies": {
     "playcanvas": "2.21.4"
