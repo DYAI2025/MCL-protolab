@@ -30,6 +30,13 @@ module.exports = {
       to: { path: 'node_modules/playcanvas' },
     },
     {
+      name: 'shell-is-the-only-composition-root',
+      severity: 'error',
+      comment: 'Only src/shell may wire experiments to the runtime. Keeps the composition root single and findable.',
+      from: { path: '^src/(runtime|core)/' },
+      to: { path: '^src/shell/' },
+    },
+    {
       name: 'no-mc-legends-dependency',
       severity: 'error',
       comment: 'ADR-0002: the lab must never depend on the production web repo.',
