@@ -1,0 +1,32 @@
+{
+  "id": "zhalm-forest-v1",
+  "title": "Zhalm forest sound-network encounter",
+  "hypothesis": "Movement noise feeding a visible root-sensor network creates legible stealth pressure: a player can read the network's alert state from node pulses alone, choose speed to manage noise, and de-escalate a triggered guardian by staying quiet — before any real AI, art or audio exists.",
+  "design_status": "CONFLICT",
+  "source_refs": ["MLOA:32735234#Zhalm-Druhen", "MLOA:20250626"],
+  "runtime_adapter": "playcanvas-2.21.4",
+  "mechanics": ["noise-emission", "sensor-network-propagation", "alert-escalation", "investigate-chase", "reach-goal", "reset"],
+  "assets": ["character.hero.placeholder", "environment.test.ground"],
+  "tunables": {
+    "zhalm.walkNoise": 3,
+    "zhalm.sprintNoise": 9,
+    "zhalm.linkRange": 14,
+    "zhalm.pulseSpeed": 10,
+    "zhalm.alertDecay": 0.12,
+    "zhalm.investigateSpeed": 3,
+    "zhalm.chaseSpeed": 6.5,
+    "zhalm.catchDistance": 1.4
+  },
+  "success_signals": [
+    "A first-time player can explain the guardian's three alert levels purely from node and guardian visuals.",
+    "Sprinting near a sensor reliably triggers a visible pulse cascade and an investigation of the noise position.",
+    "Walking slowly past the same sensor does not trigger the cascade at default tunables.",
+    "Staying quiet and distant de-escalates a chase back to calm, and the grove heart is reachable through deliberate routing."
+  ],
+  "kill_criteria": [
+    "Players cannot tell suspicious from alerted no matter how tunables are set (readability failure).",
+    "The dominant strategy is pure sprinting because noise pressure never matters (mechanic failure).",
+    "Network propagation cost makes the scene unplayable at 7 nodes (feasibility failure)."
+  ],
+  "reset_strategy": "Teleport the player to spawn with zeroed velocity, clear all node energy and stimulation, return the guardian to its den in calm state, and reset win/catch counters. Deterministic, no backend state."
+}

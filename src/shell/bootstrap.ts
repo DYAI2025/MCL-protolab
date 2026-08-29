@@ -1,6 +1,7 @@
 import { Vec3 } from 'playcanvas';
 import { createCreatureFxGalleryExperiment } from '../../experiments/creature-fx-gallery/index.ts';
 import { createPlaygroundExperiment } from '../../experiments/playground/index.ts';
+import { createZhalmForestExperiment } from '../../experiments/zhalm-forest-v1/index.ts';
 import { createTunables } from '../core/config/tunables.ts';
 import { createEmitter } from '../core/events/emitter.ts';
 import type { ProtolabEvents } from '../core/events/protolab-events.ts';
@@ -25,6 +26,15 @@ export async function bootstrap(canvas: HTMLCanvasElement): Promise<void> {
     'player.jumpForce': { value: 600, min: 0, max: 2000, step: 10 },
     'camera.distance': { value: 5, min: 1.5, max: 15, step: 0.1 },
     'camera.sensitivity': { value: 0.15, min: 0.01, max: 1, step: 0.01 },
+    // zhalm-forest-v1 — network tunables (linkRange/pulseSpeed/decay apply on reset)
+    'zhalm.walkNoise': { value: 3, min: 0, max: 20, step: 0.5 },
+    'zhalm.sprintNoise': { value: 9, min: 0, max: 30, step: 0.5 },
+    'zhalm.linkRange': { value: 14, min: 4, max: 30, step: 1 },
+    'zhalm.pulseSpeed': { value: 10, min: 2, max: 40, step: 1 },
+    'zhalm.alertDecay': { value: 0.12, min: 0.02, max: 1, step: 0.02 },
+    'zhalm.investigateSpeed': { value: 3, min: 0.5, max: 10, step: 0.25 },
+    'zhalm.chaseSpeed': { value: 6.5, min: 1, max: 14, step: 0.25 },
+    'zhalm.catchDistance': { value: 1.4, min: 0.5, max: 4, step: 0.1 },
   });
 
   const bus = createEmitter<ProtolabEvents>();
@@ -57,6 +67,7 @@ export async function bootstrap(canvas: HTMLCanvasElement): Promise<void> {
 
   registry.register(createPlaygroundExperiment());
   registry.register(createCreatureFxGalleryExperiment());
+  registry.register(createZhalmForestExperiment());
 
   const requested = new URLSearchParams(window.location.search).get('experiment') ?? 'playground';
   registry.load(requested, ctx);

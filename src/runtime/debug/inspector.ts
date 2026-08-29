@@ -52,6 +52,7 @@ export function mountInspector(options: InspectorOptions): () => void {
     'background:rgba(13,17,23,0.82)', 'backdrop-filter:blur(4px)', 'padding:12px 14px',
     'margin:10px', 'border-radius:8px', 'min-width:230px', 'max-width:280px',
     'font-size:12px', 'line-height:1.5',
+    'max-height:calc(100vh - 140px)', 'overflow-y:auto', // experiments add their own chips above/below
   ].join(';');
 
   // EXPERIMENT
