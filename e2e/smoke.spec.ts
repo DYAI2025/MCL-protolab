@@ -28,8 +28,8 @@ test('runtime boots and physics simulates', async ({ page }, testInfo) => {
   // Physics is either alive or permanently dead — there is no in-between.
   expect(start - end, `crate did not fall: start=${start} end=${end}`).toBeGreaterThan(0.5);
 
-  await page.screenshot({ path: 'artifacts/screens/skeleton.png' });
-  await page.screenshot({ path: testInfo.outputPath('skeleton.png') });
+  await page.screenshot({ path: 'artifacts/screens/playground.png' });
+  await page.screenshot({ path: testInfo.outputPath('playground.png') });
 
   expect(errors, errors.join('\n')).toEqual([]);
 });
