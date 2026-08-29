@@ -11,6 +11,12 @@ const pairs = [
   ['schemas/asset-registry.schema.json', 'assets/registry/assets.json'],
 ];
 
+// Every real experiment document (the _template pair is listed explicitly above).
+for (const dir of readdirSync('experiments').filter((d) => !d.startsWith('_'))) {
+  const doc = join('experiments', dir, 'experiment.json');
+  if (existsSync(doc)) pairs.push(['schemas/experiment.schema.json', doc]);
+}
+
 // Every creature concept profile, if the addendum's schema is present.
 if (existsSync('schemas/creature-concept.schema.json') && existsSync('concepts/creatures')) {
   for (const f of readdirSync('concepts/creatures').filter((f) => f.endsWith('.json'))) {
