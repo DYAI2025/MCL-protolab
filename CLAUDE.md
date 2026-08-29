@@ -25,7 +25,7 @@ npm run build              # tsc + vite build
 npm run e2e                # Playwright smoke (starts its own Vite on :5173)
 ```
 
-Run a single unit test: `npx vitest run src/core/events/emitter.test.ts`. Single e2e spec: `npx playwright test e2e/gallery.spec.ts`. Contract validation: `npm run validate:contracts` (ajv over all schemas vs experiment/asset/creature documents — extend `scripts/validate-contracts.mjs` when a new contract lands). Full verified command reference: `docs/runtime/SETUP.md`.
+Run a single unit test: `npx vitest run src/core/events/emitter.test.ts`. Single e2e spec: `npx playwright test e2e/gallery.spec.ts`. Contract validation: `npm run validate:contracts` (ajv over all schemas vs experiment/asset/creature documents — extend `scripts/validate-contracts.mjs` when a new contract lands). Full verified command reference: `docs/runtime/SETUP.md`. **Adding a new experiment: follow `docs/runtime/EXTENDING.md`** (contract → implement `Experiment` → register in `src/shell/bootstrap.ts` → assets via registry → gates).
 
 ## Architecture
 

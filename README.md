@@ -17,6 +17,8 @@ Primary loop:
 
 idea -> experiment spec -> agent implementation -> localhost play -> tune -> reset -> compare -> keep/discard learning
 
+Adding your own gameplay experiment: `docs/runtime/EXTENDING.md`.
+
 ## Experiments
 
 - `playground` — neutral third-person movement/physics/reset playground (default).
