@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test';
 
 type ProtolabHook = {
   cratePosition: () => { x: number; y: number; z: number };
+  playerPosition: () => { x: number; y: number; z: number };
   physicsAlive: () => number;
+  stepForward: (on: boolean) => void;
 };
 
 test('runtime boots and physics simulates', async ({ page }, testInfo) => {
@@ -25,4 +27,18 @@ test('runtime boots and physics simulates', async ({ page }, testInfo) => {
   await page.screenshot({ path: testInfo.outputPath('skeleton.png') });
 
   expect(errors, errors.join('\n')).toEqual([]);
+});
+
+test('synthetic movement produces a position delta', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => '__protolab' in window);
+  const before = await page.evaluate(() => (window as unknown as { __protolab: ProtolabHook }).__protolab.playerPosition());
+  // Drives the controller input state via the __protolab hook: the controller's
+  // keyboard source ignores synthetic key events without pointer lock (see main.ts).
+  await page.evaluate(() => (window as unknown as { __protolab: ProtolabHook }).__protolab.stepForward(true));
+  await page.waitForTimeout(800);
+  await page.evaluate(() => (window as unknown as { __protolab: ProtolabHook }).__protolab.stepForward(false));
+  const after = await page.evaluate(() => (window as unknown as { __protolab: ProtolabHook }).__protolab.playerPosition());
+  const delta = Math.hypot(after.x - before.x, after.z - before.z);
+  expect(delta, `player did not move: ${JSON.stringify({ before, after })}`).toBeGreaterThan(0.5);
 });
