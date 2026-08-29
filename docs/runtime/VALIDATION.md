@@ -14,8 +14,8 @@ An unexecuted gate is `not_run`, never `passed`. Every gate below was also seen 
 | Build | `npm run build` | production build succeeds; advisory chunk-size warning (engine bundle, 331 kB gzip) | PASS |
 | Browser smoke | `npm run e2e` | `4 passed (31.4s)` — boot+physics, movement delta, reset-to-spawn, gallery (4 concept ids + one deterministic FX state each) | PASS |
 | CI (full chain on Linux) | push to GitHub | `gates` workflow: success on every push since introduction | PASS |
-| Fresh-clone gate | plan Task 18 sequence | not yet executed | not_run |
-| Manual runtime gate (mission §8, 9 points + gallery) | by hand | not yet executed | not_run |
+| Fresh-clone gate | plan Task 18 sequence (clone → `nvm use` → `npm install` → all gates → `npx playwright install chromium` → `npm run e2e` → `npm run dev`) | executed 2026-08-29 in a separate directory: all gates green, e2e `4 passed (22.1s)`, dev server `HTTP 200` for `/` and `/ammo/ammo.wasm.js` | PASS |
+| Manual runtime gate (mission §8, 9 points + gallery) | by hand (Ben) | not yet executed — a green test suite does not substitute | not_run |
 
 ## Red-before-green evidence
 
