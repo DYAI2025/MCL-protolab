@@ -1,4 +1,5 @@
 import { Vec3 } from 'playcanvas';
+import { createCreatureFxGalleryExperiment } from '../../experiments/creature-fx-gallery/index.ts';
 import { createPlaygroundExperiment } from '../../experiments/playground/index.ts';
 import { createTunables } from '../core/config/tunables.ts';
 import { createEmitter } from '../core/events/emitter.ts';
@@ -55,7 +56,10 @@ export async function bootstrap(canvas: HTMLCanvasElement): Promise<void> {
   const ctx: ExperimentContext = { scene, tunables };
 
   registry.register(createPlaygroundExperiment());
-  registry.load('playground', ctx);
+  registry.register(createCreatureFxGalleryExperiment());
+
+  const requested = new URLSearchParams(window.location.search).get('experiment') ?? 'playground';
+  registry.load(requested, ctx);
 
   const doReset = (): void => registry.reset(ctx);
   window.addEventListener('keydown', (event) => {
@@ -114,5 +118,8 @@ export async function bootstrap(canvas: HTMLCanvasElement): Promise<void> {
     },
     teleportPlayer: (x: number, y: number, z: number) => movePlayerTo(new Vec3(x, y, z)),
     reset: () => doReset(),
+    loadExperiment: (id: string) => registry.load(id, ctx),
+    activeExperiment: () => registry.activeId(),
+    experiments: () => registry.ids(),
   };
 }
