@@ -77,6 +77,10 @@ npm run typecheck && npm run lint && npm run boundaries && npm run validate:cont
 - `src/runtime/` and `src/core/` never import experiment code.
 - Violations fail `npm run boundaries` / `npm run lint` — locally and in CI.
 
+## Blocky 3D assets
+
+Generated block models (spec → GLB + Blockbench-editable `.bbmodel`) have their own pipeline — see `docs/runtime/BLOCKBENCH.md`. Compare designs side by side in `/?experiment=blockmodel-gallery-v1`.
+
 ## Promotion rule
 
 Logic stays experiment-local until **two independent experiments** need the same behavior contract — only then does it move into `src/core/` (with tests) or `src/runtime/`. Duplication between experiments is correct, not a smell.
