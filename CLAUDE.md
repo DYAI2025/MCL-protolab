@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repository is
 
-The **disposable gameplay-prototyping lab** for MC Legends / Legends of Avaloria (`DYAI2025/MCL-protolab`). Current state: the runtime-foundation mission is **in execution** on `feat/prototype-runtime-foundation` (draft PR #3) — Vite + TypeScript-strict scaffold with PlayCanvas 2.21.4 committed, all static gates wired and green, walking-skeleton (PlayCanvas boot + Ammo physics, plan Task 3) is the next go/no-go gate.
+The **disposable gameplay-prototyping lab** for MC Legends / Legends of Avaloria (`DYAI2025/MCL-protolab`). Current state: the runtime **is built** on `feat/prototype-runtime-foundation` (draft PR #3) — PlayCanvas 2.21.4 + Ammo physics, third-person playground, experiment registry with reset lifecycle, debug inspector with live tunables, creature FX gallery (mugosh/flammenwolf/veras/zhalm with deterministic FX states), 4-test Playwright smoke, full gate chain green locally and in CI. The PlayCanvas-first risk gate is CONFIRMED (`docs/architecture/DECISION-2026-08-29-playcanvas-risk-gate.md`); ADR-0003 records the runtime decision. Remaining plan work: fresh-clone gate (Task 18), manual runtime gate (Task 19, needs Ben), delivery report (Task 20).
 
 Read `AGENTS.md` and `docs/architecture/ADR-0002-prototype-lab.md` before changing anything architectural — they are the binding rule sources. The executable work plan is `docs/plans/2026-08-23-runtime-foundation-implementation-plan.md`; where `docs/plans/2026-08-23-runtime-foundation-audit-addendum.md` is more specific, it wins. The plan's **"Known traps, pre-collected"** section lists verified PlayCanvas 2.21.4 / Ammo / Vite / Playwright pitfalls — read it before touching engine code; every item there was measured, not assumed.
 
@@ -13,36 +13,19 @@ Read `AGENTS.md` and `docs/architecture/ADR-0002-prototype-lab.md` before changi
 Node is pinned to **24.19.0** (`.nvmrc`, `engines` + `engine-strict=true`). The system Node may be older — `nvm use` first or npm install fails.
 
 ```bash
-nvm use                # 24.19.0 — required
-npm ci                 # install
-npm run dev            # Vite dev server
-npm run typecheck      # tsc -p tsconfig.json
-npm run lint           # eslint .
-npm run boundaries     # dependency-cruiser import-boundary gate
-npm test               # vitest run (unit)
-npm run build          # tsc + vite build
-npm run e2e            # Playwright smoke (starts its own Vite on :5173)
+nvm use                    # 24.19.0 — required
+npm ci                     # install (plus: npx playwright install chromium, once)
+npm run dev                # Vite dev server; ?experiment=creature-fx-gallery for the gallery
+npm run typecheck          # tsc across src, experiments, e2e, configs
+npm run lint               # eslint . (includes boundaries plugin)
+npm run boundaries         # dependency-cruiser import-boundary gate
+npm run validate:contracts # ajv schema gate over experiment/asset/creature docs
+npm test                   # vitest run (unit, src/core)
+npm run build              # tsc + vite build
+npm run e2e                # Playwright smoke (starts its own Vite on :5173)
 ```
 
-Run a single unit test: `npx vitest run src/core/version.test.ts`.
-
-Schema validation for experiment/asset-registry documents (until the ajv-based contract script lands with plan Task 7):
-
-```bash
-uv run --with jsonschema python3 - <<'EOF'
-import json, jsonschema
-from pathlib import Path
-pairs = [
-    ('schemas/experiment.schema.json', 'experiments/_template/experiment.json'),
-    ('schemas/asset-registry.schema.json', 'assets/registry/assets.example.json'),
-]
-for schema_p, doc_p in pairs:
-    jsonschema.validate(json.loads(Path(doc_p).read_text()),
-                        json.loads(Path(schema_p).read_text()),
-                        cls=jsonschema.Draft202012Validator)
-    print(f'valid: {doc_p}')
-EOF
-```
+Run a single unit test: `npx vitest run src/core/events/emitter.test.ts`. Single e2e spec: `npx playwright test e2e/gallery.spec.ts`. Contract validation: `npm run validate:contracts` (ajv over all schemas vs experiment/asset/creature documents — extend `scripts/validate-contracts.mjs` when a new contract lands). Full verified command reference: `docs/runtime/SETUP.md`.
 
 ## Architecture
 

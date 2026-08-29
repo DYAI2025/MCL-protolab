@@ -1,6 +1,13 @@
-# MCL Prototype Lab - Concept Foundation
+# MCL Prototype Lab
 
-Status: concept foundation committed; **Prototype Runtime Exception granted 2026-08-23** — the runtime build is specified in `docs/plans/2026-08-23-runtime-foundation-mission.md` (design: `docs/plans/2026-08-23-runtime-foundation-design.md`) and not yet executed. Nothing in this repository changes DYAI2025/MC_legends.
+Status: **runtime built** (PlayCanvas 2.21.4 + Vite + Ammo physics, 2026-08-29) on `feat/prototype-runtime-foundation` — third-person playground, experiment harness, debug inspector, creature FX gallery, full gate chain in CI. Decision record: `docs/architecture/ADR-0003-runtime-foundation.md`; verified commands: `docs/runtime/SETUP.md`; gate results: `docs/runtime/VALIDATION.md`. The Prototype Runtime Exception (2026-08-23) covers this lab only. Nothing in this repository changes DYAI2025/MC_legends.
+
+## Quick start
+
+```bash
+nvm use && npm install && npx playwright install chromium
+npm run dev   # http://localhost:5173  (?experiment=creature-fx-gallery for the gallery)
+```
 
 ## Purpose
 
@@ -9,6 +16,11 @@ This repository concept is a disposable learning lab for MC Legends gameplay ide
 Primary loop:
 
 idea -> experiment spec -> agent implementation -> localhost play -> tune -> reset -> compare -> keep/discard learning
+
+## Experiments
+
+- `playground` — neutral third-person movement/physics/reset playground (default).
+- `creature-fx-gallery` — four concept placeholders (Mugosh, Flammenwolf, Veras, Zhalm) with switchable FX states and per-layer toggles, driven by `concepts/creatures/*.json`.
 
 ## Current architecture decision
 
