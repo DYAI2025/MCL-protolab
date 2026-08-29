@@ -1,0 +1,40 @@
+{
+  "assets": [
+    {
+      "asset_id": "character.hero.placeholder",
+      "kind": "character",
+      "path": "primitive:capsule",
+      "format": "primitive",
+      "status": "placeholder",
+      "version": "0.1.0",
+      "source": "engine primitive",
+      "license": "project-owned",
+      "provenance": "PlayCanvas render primitive; not final art",
+      "fallback_asset_id": null
+    },
+    {
+      "asset_id": "environment.test.ground",
+      "kind": "environment",
+      "path": "primitive:box",
+      "format": "primitive",
+      "status": "placeholder",
+      "version": "0.1.0",
+      "source": "engine primitive",
+      "license": "project-owned",
+      "provenance": "PlayCanvas render primitive; not final art",
+      "fallback_asset_id": null
+    },
+    {
+      "asset_id": "environment.test.crate",
+      "kind": "prop",
+      "path": "primitive:box",
+      "format": "primitive",
+      "status": "placeholder",
+      "version": "0.1.0",
+      "source": "engine primitive",
+      "license": "project-owned",
+      "provenance": "PlayCanvas render primitive; not final art",
+      "fallback_asset_id": "environment.test.ground"
+    }
+  ]
+}
