@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "boundaries": "depcruise --config .dependency-cruiser.cjs --output-type err src experiments",
     "validate:contracts": "node scripts/validate-contracts.mjs",
+    "generate:assets": "node scripts/blockmodel/build.mjs",
     "test": "vitest run",
     "e2e": "playwright test"
   },
