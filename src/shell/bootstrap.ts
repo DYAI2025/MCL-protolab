@@ -1,4 +1,5 @@
 import { Vec3 } from 'playcanvas';
+import { createBlockmodelGalleryExperiment } from '../../experiments/blockmodel-gallery-v1/index.ts';
 import { createCreatureFxGalleryExperiment } from '../../experiments/creature-fx-gallery/index.ts';
 import { createPlaygroundExperiment } from '../../experiments/playground/index.ts';
 import { createZhalmForestExperiment } from '../../experiments/zhalm-forest-v1/index.ts';
@@ -68,6 +69,7 @@ export async function bootstrap(canvas: HTMLCanvasElement): Promise<void> {
   registry.register(createPlaygroundExperiment());
   registry.register(createCreatureFxGalleryExperiment());
   registry.register(createZhalmForestExperiment());
+  registry.register(createBlockmodelGalleryExperiment());
 
   const requested = new URLSearchParams(window.location.search).get('experiment') ?? 'playground';
   registry.load(requested, ctx);
