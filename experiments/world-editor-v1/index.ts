@@ -1,10 +1,9 @@
 import { Color, Entity, StandardMaterial, Vec3 } from 'playcanvas';
 import type { AppBase, CameraComponent } from 'playcanvas';
-import { CameraControls } from 'playcanvas/scripts/esm/camera-controls.mjs';
 import registryDocument from '../../assets/registry/assets.json';
 import { createAssetRegistry, type AssetEntry } from '../../src/core/assets/asset-registry.ts';
 import type { Experiment, ExperimentContext } from '../../src/core/experiments/types.ts';
-import { disableCulling, fitToHeight } from '../../src/runtime/assets/fit.ts';
+import { disableCulling, fitToHeight, worldBoundsY } from '../../src/runtime/assets/fit.ts';
 import { instantiateAsset } from '../../src/runtime/assets/glb-loader.ts';
 import { clearFog, setFog } from '../../src/runtime/fx/atmosphere.ts';
 import { translucentMaterial } from '../../src/runtime/fx/emissive.ts';
@@ -25,9 +24,12 @@ interface WorldLayout {
   design_status: string;
   source_refs: string[];
   spawn: [number, number, number];
+  player_asset_id?: string;
   environment: { fogColor?: number[]; fogDensity?: number; skyColor?: number[]; keyLightIntensity?: number };
   entries: Array<{ asset_id: string; position: [number, number, number]; rotation_y: number; scale?: number; behavior?: string; name?: string }>;
 }
+
+const SET_SPAWN = '__set-spawn__'; // palette pseudo-asset: clicking places the player spawn
 
 // Design heights for normalized generated models (same values as the gallery).
 const TARGET_HEIGHTS: Record<string, number> = {
@@ -104,19 +106,28 @@ export function createWorldEditorExperiment(): Experiment {
         if (key.light) key.light.intensity = env.keyLightIntensity ?? DEFAULT_ENV.keyLightIntensity;
       };
 
-      // --- editor camera (orbit + fly, official script) -------------------
+      // --- editor camera: hand-rolled fly cam ------------------------------
+      // Right-mouse drag looks, WASD flies (Space/C up/down, Shift fast),
+      // wheel dollies. The LEFT button stays exclusive to editing — the
+      // official CameraControls orbits on left-drag and fought the
+      // select/move/place interactions.
       const editorCamera = new Entity('editor-camera');
       editorCamera.addComponent('camera', { clearColor: new Color(0.05, 0.07, 0.09), farClip: 600 });
       editorCamera.setPosition(0, 22, 26);
       app.root.addChild(editorCamera);
-      editorCamera.addComponent('script');
-      editorCamera.script?.create(CameraControls, {
-        properties: { focusPoint: new Vec3(0, 0, 0), sceneSize: 40 },
-      });
+      let camYaw = 0;
+      let camPitch = -38;
+      const flyKeys = new Set<string>();
+      let looking = false;
+      const applyCameraRotation = (): void => editorCamera.setEulerAngles(camPitch, camYaw, 0);
+      applyCameraRotation();
 
       // --- state ----------------------------------------------------------
       const placed: Placed[] = [];
       let spawn: [number, number, number] = [0, 1.2, 14];
+      let playerModelId = ''; // '' = default capsule
+      let playerModelEntity: Entity | null = null;
+      let playerSelect: HTMLSelectElement | null = null;
       let environment: WorldLayout['environment'] = { ...DEFAULT_ENV };
       let worldMeta = { id: 'untitled-world', title: 'Untitled world', design_status: 'TENTATIVE', source_refs: ['MLOA:22544386'] };
       let mode: 'edit' | 'play' = 'edit';
@@ -147,6 +158,57 @@ export function createWorldEditorExperiment(): Experiment {
       marker.addComponent('render', { type: 'cylinder', material: translucentMaterial(new Color(0.4, 0.8, 1.0), 0.35) });
       marker.enabled = false;
       root.addChild(marker);
+
+      // spawn marker — ghost capsule at the player start (edit mode only)
+      const spawnMarker = new Entity('spawn-marker');
+      spawnMarker.setLocalScale(1, 1.8, 1);
+      spawnMarker.addComponent('render', { type: 'capsule', material: translucentMaterial(new Color(1.0, 0.9, 0.4), 0.4) });
+      root.addChild(spawnMarker);
+      const syncSpawnMarker = (): void => {
+        spawnMarker.setPosition(spawn[0], 0.95, spawn[2]);
+        spawnMarker.enabled = mode === 'edit';
+      };
+
+      const setSpawnPoint = (x: number, z: number): void => {
+        spawn = [snap(x), 1.2, snap(z)];
+        syncSpawnMarker();
+        autosave();
+        refreshStatus();
+      };
+
+      // --- player model swap ---------------------------------------------
+      const applyPlayerModel = async (): Promise<void> => {
+        const capsule = playerEntity?.findByName('player-model') as Entity | null;
+        if (playerModelEntity) { playerModelEntity.destroy(); playerModelEntity = null; }
+        if (!playerEntity) return;
+        if (!playerModelId) {
+          if (capsule?.render) capsule.render.enabled = true;
+          return;
+        }
+        try {
+          const model = await instantiateAsset(app, registry.resolve(playerModelId), (id) => registry.resolve(id));
+          model.name = 'player-model-swap'; // stable name so destroy() can find it
+          disableCulling(model);
+          playerEntity.addChild(model);
+          // Scale to player height (1.8 m) and rest the feet at the capsule
+          // bottom (player origin is the capsule center, ground at -1 local).
+          const before = worldBoundsY(model);
+          const height = before.maxY - before.minY;
+          if (Number.isFinite(height) && height > 0.001) {
+            const factor = 1.8 / height;
+            model.setLocalScale(factor, factor, factor);
+            const after = worldBoundsY(model);
+            const playerFeet = playerEntity.getPosition().y - 1;
+            model.setLocalPosition(0, model.getLocalPosition().y + (playerFeet - after.minY), 0);
+          }
+          model.setLocalEulerAngles(0, 180, 0);
+          playerModelEntity = model;
+          if (capsule?.render) capsule.render.enabled = false;
+        } catch (error) {
+          console.error(`[editor] player model failed: ${String(error)}`);
+          if (capsule?.render) capsule.render.enabled = true;
+        }
+      };
 
       const syncMarker = (): void => {
         if (!selected) { marker.enabled = false; return; }
@@ -204,6 +266,7 @@ export function createWorldEditorExperiment(): Experiment {
       const serialize = (): WorldLayout => ({
         ...worldMeta,
         spawn,
+        ...(playerModelId ? { player_asset_id: playerModelId } : {}),
         environment,
         entries: placed.map((item) => {
           const p = item.entity.getPosition();
@@ -221,6 +284,9 @@ export function createWorldEditorExperiment(): Experiment {
         clearAll();
         worldMeta = { id: layout.id, title: layout.title, design_status: layout.design_status, source_refs: layout.source_refs };
         spawn = layout.spawn;
+        playerModelId = layout.player_asset_id ?? '';
+        if (playerSelect) playerSelect.value = playerModelId;
+        syncSpawnMarker();
         environment = layout.environment ?? { ...DEFAULT_ENV };
         applyEnvironment(environment);
         for (const entry of layout.entries) {
@@ -248,8 +314,10 @@ export function createWorldEditorExperiment(): Experiment {
           selected = null;
           behaviors.startPlay();
           scene.movePlayerTo(new Vec3(spawn[0], spawn[1], spawn[2]));
+          void applyPlayerModel();
         }
         syncMarker();
+        syncSpawnMarker();
         refreshStatus();
       };
       // start in edit mode
@@ -288,7 +356,9 @@ export function createWorldEditorExperiment(): Experiment {
       let downAt: { x: number; y: number } | null = null;
 
       const onPointerDown = (event: PointerEvent): void => {
-        if (mode !== 'edit' || event.button !== 0) return;
+        if (mode !== 'edit') return;
+        if (event.button === 2) { looking = true; return; } // fly-cam look
+        if (event.button !== 0) return;
         if ((event.target as HTMLElement).closest('#inspector')) return;
         downAt = { x: event.clientX, y: event.clientY };
         const point = groundPoint(event.clientX, event.clientY);
@@ -302,13 +372,21 @@ export function createWorldEditorExperiment(): Experiment {
         }
       };
       const onPointerMove = (event: PointerEvent): void => {
-        if (!dragging || !selected || mode !== 'edit') return;
+        if (mode !== 'edit') return;
+        if (looking) {
+          camYaw -= event.movementX * 0.25;
+          camPitch = Math.max(-85, Math.min(85, camPitch - event.movementY * 0.25));
+          applyCameraRotation();
+          return;
+        }
+        if (!dragging || !selected) return;
         const point = groundPoint(event.clientX, event.clientY);
         if (!point) return;
         applyTransform(selected, point.x, point.z);
         syncMarker();
       };
       const onPointerUp = (event: PointerEvent): void => {
+        if (event.button === 2) { looking = false; return; }
         if (mode !== 'edit') return;
         const wasDrag = dragging;
         dragging = false;
@@ -318,24 +396,41 @@ export function createWorldEditorExperiment(): Experiment {
         if ((event.target as HTMLElement).closest('#inspector')) return;
         const point = groundPoint(event.clientX, event.clientY);
         if (!point) return;
+        if (paletteAsset === SET_SPAWN) { setSpawnPoint(point.x, point.z); return; }
         if (nearestPlaced(point.x, point.z, 2.0)) return; // handled as selection on pointerdown
         if (paletteAsset) void placeAsset(paletteAsset, point.x, point.z, paletteBehavior || undefined);
       };
+      const onContextMenu = (event: Event): void => { if (mode === 'edit') event.preventDefault(); };
+      const onWheel = (event: WheelEvent): void => {
+        if (mode !== 'edit' || (event.target as HTMLElement).closest('#inspector')) return;
+        event.preventDefault();
+        const forward = editorCamera.forward;
+        const step = event.deltaY * -0.03;
+        const p = editorCamera.getPosition();
+        editorCamera.setPosition(p.x + forward.x * step, Math.max(1, p.y + forward.y * step), p.z + forward.z * step);
+      };
       canvas.addEventListener('pointerdown', onPointerDown);
+      canvas.addEventListener('contextmenu', onContextMenu);
+      canvas.addEventListener('wheel', onWheel, { passive: false });
       window.addEventListener('pointermove', onPointerMove);
       window.addEventListener('pointerup', onPointerUp);
       domCleanup.push(() => {
         canvas.removeEventListener('pointerdown', onPointerDown);
+        canvas.removeEventListener('contextmenu', onContextMenu);
+        canvas.removeEventListener('wheel', onWheel);
         window.removeEventListener('pointermove', onPointerMove);
         window.removeEventListener('pointerup', onPointerUp);
       });
 
+      const FLY_CODES = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'KeyC', 'ShiftLeft', 'ShiftRight']);
+      const onKeyUp = (event: KeyboardEvent): void => { flyKeys.delete(event.code); };
       const onKeyDown = (event: KeyboardEvent): void => {
         if (event.code === 'Tab') {
           event.preventDefault();
           setMode(mode === 'edit' ? 'play' : 'edit');
           return;
         }
+        if (mode === 'edit' && FLY_CODES.has(event.code)) flyKeys.add(event.code);
         if (mode !== 'edit' || !selected) return;
         if (event.code === 'KeyQ') { selected.rotationY -= 15; }
         else if (event.code === 'KeyE') { selected.rotationY += 15; }
@@ -353,7 +448,11 @@ export function createWorldEditorExperiment(): Experiment {
         autosave();
       };
       window.addEventListener('keydown', onKeyDown);
-      domCleanup.push(() => window.removeEventListener('keydown', onKeyDown));
+      window.addEventListener('keyup', onKeyUp);
+      domCleanup.push(() => {
+        window.removeEventListener('keydown', onKeyDown);
+        window.removeEventListener('keyup', onKeyUp);
+      });
 
       // --- panel ----------------------------------------------------------
       let statusLine: HTMLElement | null = null;
@@ -374,8 +473,8 @@ export function createWorldEditorExperiment(): Experiment {
         statusLine = document.createElement('div');
         statusLine.style.cssText = 'margin-bottom:6px;opacity:0.85;';
         const hint = document.createElement('div');
-        hint.textContent = 'Click: place/select · drag: move · Q/E rotate · +/- scale · D dup · Del remove · G snap · Tab play';
-        hint.style.cssText = 'opacity:0.5;margin-bottom:8px;';
+        hint.textContent = 'Kamera: rechte Maus schwenken · WASD fliegen · Space/C hoch/runter · Shift schnell · Rad zoom — Editieren: Linksklick platzieren/wählen · ziehen verschieben · Q/E drehen · +/- Größe · D Kopie · Entf löschen · G Raster';
+        hint.style.cssText = 'opacity:0.55;margin-bottom:8px;';
         panel.append(heading, statusLine, hint);
 
         const assetSelect = document.createElement('select');
@@ -384,6 +483,10 @@ export function createWorldEditorExperiment(): Experiment {
         placeholder.value = '';
         placeholder.textContent = '— choose asset —';
         assetSelect.append(placeholder);
+        const spawnOption = document.createElement('option');
+        spawnOption.value = SET_SPAWN;
+        spawnOption.textContent = '🧍 Spieler-Spawn setzen (klicken)';
+        assetSelect.append(spawnOption);
         const byKind = new Map<string, AssetEntry[]>();
         for (const entry of registry.ids().map((id) => registry.resolve(id))) {
           if (entry.path.startsWith('primitive:')) continue;
@@ -421,11 +524,33 @@ export function createWorldEditorExperiment(): Experiment {
         rebuildBehaviorOptions();
         assetSelect.addEventListener('change', () => {
           paletteAsset = assetSelect.value || null;
-          paletteBehavior = (paletteAsset ? (defaultBehaviorFor(paletteAsset) ?? '') : '') as BehaviorPreset | '';
+          paletteBehavior = (paletteAsset && paletteAsset !== SET_SPAWN ? (defaultBehaviorFor(paletteAsset) ?? '') : '') as BehaviorPreset | '';
           rebuildBehaviorOptions();
         });
         behaviorSelect.addEventListener('change', () => { paletteBehavior = behaviorSelect.value as BehaviorPreset | ''; });
         panel.append(assetSelect, behaviorSelect);
+
+        // player model picker — swaps the capsule when play mode starts
+        playerSelect = document.createElement('select');
+        playerSelect.style.cssText = 'width:100%;margin-bottom:6px;';
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'player model: capsule (default)';
+        playerSelect.append(defaultOption);
+        for (const id of registry.ids()) {
+          const entry = registry.resolve(id);
+          if (entry.path.startsWith('primitive:') || (entry.kind !== 'character' && entry.kind !== 'creature')) continue;
+          const option = document.createElement('option');
+          option.value = entry.asset_id;
+          option.textContent = `player model: ${entry.asset_id.replace(/^creature\./, '')}`;
+          playerSelect.append(option);
+        }
+        playerSelect.addEventListener('change', () => {
+          playerModelId = playerSelect?.value ?? '';
+          autosave();
+          if (mode === 'play') void applyPlayerModel();
+        });
+        panel.append(playerSelect);
 
         const row = document.createElement('div');
         row.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;';
@@ -457,8 +582,13 @@ export function createWorldEditorExperiment(): Experiment {
         panel.append(fileInput);
         button('Import', () => fileInput.click());
         button('Clear', () => { clearAll(); autosave(); });
-        button('Play/Edit', () => setMode(mode === 'edit' ? 'play' : 'edit'));
         panel.append(row);
+
+        const playButton = document.createElement('button');
+        playButton.textContent = '▶ Play / Edit  (Tab)';
+        playButton.style.cssText = 'width:100%;margin-top:6px;font-size:12px;padding:5px;cursor:pointer;font-weight:600;';
+        playButton.addEventListener('click', () => setMode(mode === 'edit' ? 'play' : 'edit'));
+        panel.append(playButton);
 
         const worldSelect = document.createElement('select');
         worldSelect.style.cssText = 'width:100%;margin-top:6px;';
@@ -484,6 +614,20 @@ export function createWorldEditorExperiment(): Experiment {
       // --- update loop ----------------------------------------------------
       onUpdate = (dt: number) => {
         behaviors.update(dt);
+        if (mode === 'edit' && flyKeys.size > 0) {
+          const speed = (flyKeys.has('ShiftLeft') || flyKeys.has('ShiftRight') ? 36 : 12) * dt;
+          const forward = editorCamera.forward;
+          const right = editorCamera.right;
+          let dx = 0, dy = 0, dz = 0;
+          if (flyKeys.has('KeyW')) { dx += forward.x * speed; dy += forward.y * speed; dz += forward.z * speed; }
+          if (flyKeys.has('KeyS')) { dx -= forward.x * speed; dy -= forward.y * speed; dz -= forward.z * speed; }
+          if (flyKeys.has('KeyD')) { dx += right.x * speed; dz += right.z * speed; }
+          if (flyKeys.has('KeyA')) { dx -= right.x * speed; dz -= right.z * speed; }
+          if (flyKeys.has('Space')) dy += speed;
+          if (flyKeys.has('KeyC')) dy -= speed;
+          const p = editorCamera.getPosition();
+          editorCamera.setPosition(p.x + dx, Math.max(0.6, p.y + dy), p.z + dz);
+        }
         if (mode === 'play' && playerEntity?.rigidbody) {
           noiseTimer += dt;
           const v = playerEntity.rigidbody.linearVelocity;
@@ -500,6 +644,7 @@ export function createWorldEditorExperiment(): Experiment {
       app.on('update', onUpdate);
 
       applyEnvironment(environment);
+      syncSpawnMarker();
 
       // Restore autosave if present.
       try {
@@ -522,6 +667,10 @@ export function createWorldEditorExperiment(): Experiment {
         noiseAt: (x: number, z: number, r: number) => behaviors.noiseAt(x, z, r),
         caught: () => caught,
         clear: () => clearAll(),
+        setSpawn: (x: number, z: number) => setSpawnPoint(x, z),
+        spawnPos: () => [...spawn],
+        setPlayerModel: (id: string) => { playerModelId = id; if (playerSelect) playerSelect.value = id; },
+        playerModel: () => playerModelId,
       };
     },
 
@@ -544,7 +693,12 @@ export function createWorldEditorExperiment(): Experiment {
           playCamera.camera.enabled = true;
           playCamera.camera.clearColor = new Color(0.48, 0.72, 0.9);
         }
-        if (playerEntity) playerEntity.enabled = true;
+        if (playerEntity) {
+          playerEntity.enabled = true;
+          playerEntity.findByName('player-model-swap')?.destroy();
+          const capsule = playerEntity.findByName('player-model') as Entity | null;
+          if (capsule?.render) capsule.render.enabled = true;
+        }
         appRef.root.findByName('editor-camera')?.destroy();
       }
       onUpdate = null;

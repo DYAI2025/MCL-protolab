@@ -3,13 +3,17 @@ import { expect, test } from '@playwright/test';
 type EditorHook = {
   place: (assetId: string, x: number, z: number, behavior?: string) => Promise<unknown>;
   count: () => number;
-  serialize: () => unknown;
+  serialize: () => { spawn: number[]; player_asset_id?: string };
   load: (layout: unknown) => Promise<void>;
   setMode: (m: 'edit' | 'play') => void;
   mode: () => 'edit' | 'play';
   level: () => 'calm' | 'suspicious' | 'alerted';
   noiseAt: (x: number, z: number, r: number) => void;
   clear: () => void;
+  setSpawn: (x: number, z: number) => void;
+  spawnPos: () => number[];
+  setPlayerModel: (id: string) => void;
+  playerModel: () => string;
 };
 
 test.setTimeout(180_000); // V2 GLB loads + behavior sim under SwiftShader on CI
@@ -35,6 +39,16 @@ test('world editor: place, save/load roundtrip, play mode with live sound networ
     await h.place('creature.zhalm.blockmodel', 2, -18, 'zhalm-guardian');
   });
   expect(await page.evaluate(() => (window as unknown as { __editor: EditorHook }).__editor.count())).toBe(4);
+
+  // Spawn placement and player-model choice survive the roundtrip.
+  await page.evaluate(() => {
+    const h = (window as unknown as { __editor: EditorHook }).__editor;
+    h.setSpawn(5, -4);
+    h.setPlayerModel('creature.mugosh.blockmodel-a');
+  });
+  const withMeta = await page.evaluate(() => (window as unknown as { __editor: EditorHook }).__editor.serialize());
+  expect(withMeta.spawn).toEqual([5, 1.2, -4]);
+  expect(withMeta.player_asset_id).toBe('creature.mugosh.blockmodel-a');
 
   // Serialize -> clear -> load -> serialize must be identical.
   const first = await page.evaluate(() => (window as unknown as { __editor: EditorHook }).__editor.serialize());
