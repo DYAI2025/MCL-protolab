@@ -1,0 +1,35 @@
+{
+  "id": "first-glade",
+  "title": "First glade — demo encounter",
+  "design_status": "TENTATIVE",
+  "source_refs": ["MLOA:22544386", "MLOA:32735234"],
+  "spawn": [0, 1.2, 22],
+  "environment": {
+    "fogColor": [0.03, 0.045, 0.055],
+    "fogDensity": 0.014,
+    "skyColor": [0.03, 0.045, 0.055],
+    "keyLightIntensity": 1.3
+  },
+  "entries": [
+    { "asset_id": "creature.mugosh.tripo-s1", "position": [-14, 0, -6], "rotation_y": 160, "behavior": "mugosh-guardian", "name": "glade guardian" },
+    { "asset_id": "creature.veras.tripo-s1", "position": [8, 0, 4], "rotation_y": 200, "behavior": "veras-gentle", "name": "wisp east" },
+    { "asset_id": "creature.veras.tripo-s1", "position": [-6, 0, 10], "rotation_y": 90, "behavior": "veras-gentle", "name": "wisp west" },
+    { "asset_id": "creature.flammenwolf.tripo-s1", "position": [18, 0, -18], "rotation_y": 140, "behavior": "flammenwolf-hostile", "name": "ember prowler" },
+    { "asset_id": "creature.zhalm.blockmodel", "position": [0, 0, -26], "rotation_y": 180, "behavior": "zhalm-guardian", "name": "root warden" },
+    { "asset_id": "prop.zhalm.sensor-node.blockmodel", "position": [-8, 0, -14], "rotation_y": 0, "behavior": "zhalm-node" },
+    { "asset_id": "prop.zhalm.sensor-node.blockmodel", "position": [0, 0, -12], "rotation_y": 45, "behavior": "zhalm-node" },
+    { "asset_id": "prop.zhalm.sensor-node.blockmodel", "position": [8, 0, -15], "rotation_y": 90, "behavior": "zhalm-node" },
+    { "asset_id": "prop.zhalm.sensor-node.blockmodel", "position": [-4, 0, -21], "rotation_y": 130, "behavior": "zhalm-node" },
+    { "asset_id": "prop.zhalm.sensor-node.blockmodel", "position": [5, 0, -22], "rotation_y": 200, "behavior": "zhalm-node" },
+    { "asset_id": "creature.steinwolf.blockmodel", "position": [-20, 0, 8], "rotation_y": 120, "name": "stone watcher (static)" },
+    { "asset_id": "env.rock-moss-set-01", "position": [-12, 0, 6], "rotation_y": 30 },
+    { "asset_id": "env.rock-moss-set-01", "position": [14, 0, -2], "rotation_y": 210 },
+    { "asset_id": "env.rock-07", "position": [6, 0, 16], "rotation_y": 75 },
+    { "asset_id": "env.tree-stump-01", "position": [-4, 0, 2], "rotation_y": 0 },
+    { "asset_id": "env.dead-quiver-trunk", "position": [12, 0, 8], "rotation_y": 160 },
+    { "asset_id": "env.root-cluster-01", "position": [-2, 0, -17], "rotation_y": 90, "name": "zhalm roots" },
+    { "asset_id": "env.root-cluster-01", "position": [4, 0, -19], "rotation_y": 280, "name": "zhalm roots east" },
+    { "asset_id": "env.gothic-statue", "position": [0, 0, 8], "rotation_y": 180, "name": "old shrine" },
+    { "asset_id": "env.modular-fort-01", "position": [-24, 0, -22], "rotation_y": 45, "name": "ruined watch" }
+  ]
+}

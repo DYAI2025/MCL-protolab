@@ -167,6 +167,90 @@
       "license": "generated on Tripo FREE wallet credits — assume CC BY 4.0 non-commercial: REVIEW/EVALUATION ONLY, regenerate under a paid tier before any release use",
       "provenance": "image-to-3D from concepts/art-direction/crops/eis-mugosh-frostberge-cut.png (Eis-Mugosh sheet — TENTATIVE variant not yet in the bestiary page); candidate until Ben approves",
       "fallback_asset_id": "creature.mugosh.blockmodel-a"
+    },
+    {
+      "asset_id": "env.rock-moss-set-01",
+      "kind": "environment",
+      "path": "/assets/env/rock_moss_set_01.glb",
+      "format": "glb",
+      "status": "approved_for_prototype",
+      "version": "0.1.0",
+      "source": "Poly Haven Rock Moss Set 01 (https://polyhaven.com/a/rock_moss_set_01), fetched via scripts/fetch-polyhaven.mjs, 1k textures, simplified 50% + webp",
+      "license": "CC0 (https://polyhaven.com/license)",
+      "provenance": "photoreal CC0 environment asset for the V2 world editor (MLOA:22544386); style-compatible with the semi-realistic direction",
+      "fallback_asset_id": "environment.test.crate"
+    },
+    {
+      "asset_id": "env.rock-07",
+      "kind": "environment",
+      "path": "/assets/env/rock_07.glb",
+      "format": "glb",
+      "status": "approved_for_prototype",
+      "version": "0.1.0",
+      "source": "Poly Haven Rock 07 (https://polyhaven.com/a/rock_07), fetched via scripts/fetch-polyhaven.mjs, 1k textures, simplified 50% + webp",
+      "license": "CC0 (https://polyhaven.com/license)",
+      "provenance": "photoreal CC0 environment asset for the V2 world editor (MLOA:22544386); style-compatible with the semi-realistic direction",
+      "fallback_asset_id": "environment.test.crate"
+    },
+    {
+      "asset_id": "env.tree-stump-01",
+      "kind": "environment",
+      "path": "/assets/env/tree_stump_01.glb",
+      "format": "glb",
+      "status": "approved_for_prototype",
+      "version": "0.1.0",
+      "source": "Poly Haven Tree Stump 01 (https://polyhaven.com/a/tree_stump_01), fetched via scripts/fetch-polyhaven.mjs, 1k textures, simplified 50% + webp",
+      "license": "CC0 (https://polyhaven.com/license)",
+      "provenance": "photoreal CC0 environment asset for the V2 world editor (MLOA:22544386); style-compatible with the semi-realistic direction",
+      "fallback_asset_id": "environment.test.crate"
+    },
+    {
+      "asset_id": "env.dead-quiver-trunk",
+      "kind": "environment",
+      "path": "/assets/env/dead_quiver_trunk.glb",
+      "format": "glb",
+      "status": "approved_for_prototype",
+      "version": "0.1.0",
+      "source": "Poly Haven Dead Quiver Trunk (https://polyhaven.com/a/dead_quiver_trunk), fetched via scripts/fetch-polyhaven.mjs, 1k textures, simplified 50% + webp",
+      "license": "CC0 (https://polyhaven.com/license)",
+      "provenance": "photoreal CC0 environment asset for the V2 world editor (MLOA:22544386); style-compatible with the semi-realistic direction",
+      "fallback_asset_id": "environment.test.crate"
+    },
+    {
+      "asset_id": "env.root-cluster-01",
+      "kind": "environment",
+      "path": "/assets/env/root_cluster_01.glb",
+      "format": "glb",
+      "status": "approved_for_prototype",
+      "version": "0.1.0",
+      "source": "Poly Haven Root Cluster 01 (https://polyhaven.com/a/root_cluster_01), fetched via scripts/fetch-polyhaven.mjs, 1k textures, simplified 50% + webp",
+      "license": "CC0 (https://polyhaven.com/license)",
+      "provenance": "photoreal CC0 environment asset for the V2 world editor (MLOA:22544386); style-compatible with the semi-realistic direction",
+      "fallback_asset_id": "environment.test.crate"
+    },
+    {
+      "asset_id": "env.gothic-statue",
+      "kind": "prop",
+      "path": "/assets/env/gothic_statue.glb",
+      "format": "glb",
+      "status": "approved_for_prototype",
+      "version": "0.1.0",
+      "source": "Poly Haven Gothic Statue (https://polyhaven.com/a/gothic_statue), fetched via scripts/fetch-polyhaven.mjs, 1k textures, simplified 50% + webp",
+      "license": "CC0 (https://polyhaven.com/license)",
+      "provenance": "photoreal CC0 environment asset for the V2 world editor (MLOA:22544386); style-compatible with the semi-realistic direction",
+      "fallback_asset_id": "environment.test.crate"
+    },
+    {
+      "asset_id": "env.modular-fort-01",
+      "kind": "prop",
+      "path": "/assets/env/modular_fort_01.glb",
+      "format": "glb",
+      "status": "approved_for_prototype",
+      "version": "0.1.0",
+      "source": "Poly Haven Modular Fort 01 (https://polyhaven.com/a/modular_fort_01), fetched via scripts/fetch-polyhaven.mjs, 1k textures, simplified 50% + webp",
+      "license": "CC0 (https://polyhaven.com/license)",
+      "provenance": "photoreal CC0 environment asset for the V2 world editor (MLOA:22544386); style-compatible with the semi-realistic direction",
+      "fallback_asset_id": "environment.test.crate"
     }
   ]
 }
