@@ -17,6 +17,13 @@ for (const dir of readdirSync('experiments').filter((d) => !d.startsWith('_'))) 
   if (existsSync(doc)) pairs.push(['schemas/experiment.schema.json', doc]);
 }
 
+// Every world layout, template included.
+if (existsSync('worlds')) {
+  for (const f of readdirSync('worlds').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/world-layout.schema.json', join('worlds', f)]);
+  }
+}
+
 // Every creature concept profile, if the addendum's schema is present.
 if (existsSync('schemas/creature-concept.schema.json') && existsSync('concepts/creatures')) {
   for (const f of readdirSync('concepts/creatures').filter((f) => f.endsWith('.json'))) {

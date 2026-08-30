@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "design_status",
+    "source_refs",
+    "spawn",
+    "environment",
+    "entries"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "design_status": {
+      "enum": ["STATED", "TENTATIVE", "AMBIGUOUS", "CONFLICT"]
+    },
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "spawn": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "type": "number" }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fogColor": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "fogDensity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "skyColor": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "keyLightIntensity": { "type": "number", "minimum": 0, "maximum": 10 }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["asset_id", "position", "rotation_y"],
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]+$"
+          },
+          "position": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": { "type": "number" }
+          },
+          "rotation_y": { "type": "number", "minimum": -360, "maximum": 360 },
+          "scale": { "type": "number", "exclusiveMinimum": 0, "maximum": 100 },
+          "behavior": {
+            "enum": [
+              "mugosh-guardian",
+              "flammenwolf-hostile",
+              "veras-gentle",
+              "zhalm-node",
+              "zhalm-guardian"
+            ]
+          },
+          "name": { "type": "string" }
+        }
+      }
+    }
+  }
+}

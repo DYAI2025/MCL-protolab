@@ -10,3 +10,6 @@ test-results/
 # Claude Code session artifacts — never commit session logs or local settings
 .claude/
 **/.claude/
+
+# Tripo CLI local history
+.tripo/

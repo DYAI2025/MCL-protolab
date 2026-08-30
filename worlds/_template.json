@@ -1,0 +1,40 @@
+{
+  "id": "template-world",
+  "title": "Template world \u2014 copy me",
+  "design_status": "TENTATIVE",
+  "source_refs": [
+    "MLOA:22544386"
+  ],
+  "spawn": [
+    0,
+    1.2,
+    10
+  ],
+  "environment": {
+    "fogColor": [
+      0.05,
+      0.07,
+      0.09
+    ],
+    "fogDensity": 0.015,
+    "skyColor": [
+      0.05,
+      0.07,
+      0.09
+    ],
+    "keyLightIntensity": 1.4
+  },
+  "entries": [
+    {
+      "asset_id": "creature.mugosh.tripo-s1",
+      "position": [
+        0,
+        0,
+        -8
+      ],
+      "rotation_y": 180,
+      "behavior": "mugosh-guardian",
+      "name": "example guardian"
+    }
+  ]
+}
