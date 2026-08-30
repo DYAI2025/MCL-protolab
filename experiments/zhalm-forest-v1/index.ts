@@ -7,7 +7,7 @@ import { createPostChain } from '../../src/runtime/fx/post.ts';
 import { emissiveMaterial, translucentMaterial } from '../../src/runtime/fx/emissive.ts';
 import { addParticles } from '../../src/runtime/fx/particles.ts';
 import type { SceneContext } from '../../src/runtime/scene-context.ts';
-import { createSoundNetwork, type SoundNetwork } from './network.ts';
+import { createSoundNetwork, type SoundNetwork } from '../../src/core/sound-network/network.ts';
 
 const SPAWN = new Vec3(0, 1.2, 30);
 const HEART_POSITION = new Vec3(0, 1.1, -32);

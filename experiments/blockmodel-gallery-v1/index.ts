@@ -1,8 +1,8 @@
-import { CULLFACE_NONE, Color, Entity, StandardMaterial, Vec3 } from 'playcanvas';
-import type { Material, RenderComponent } from 'playcanvas';
+import { Color, Entity, StandardMaterial, Vec3 } from 'playcanvas';
 import registryDocument from '../../assets/registry/assets.json';
 import { createAssetRegistry, type AssetEntry } from '../../src/core/assets/asset-registry.ts';
 import type { Experiment, ExperimentContext } from '../../src/core/experiments/types.ts';
+import { disableCulling, fitToHeight } from '../../src/runtime/assets/fit.ts';
 import { instantiateAsset } from '../../src/runtime/assets/glb-loader.ts';
 import type { SceneContext } from '../../src/runtime/scene-context.ts';
 
@@ -29,20 +29,6 @@ const material = (r: number, g: number, b: number) => {
   m.update();
   return m;
 };
-
-/** World-space vertical bounds over all render mesh instances (reads fresh). */
-function worldBoundsY(entity: Entity): { minY: number; maxY: number } {
-  let minY = Infinity;
-  let maxY = -Infinity;
-  for (const component of entity.findComponents('render') as RenderComponent[]) {
-    for (const meshInstance of component.meshInstances) {
-      const aabb = meshInstance.aabb; // world-space, lazily synced on read
-      minY = Math.min(minY, aabb.center.y - aabb.halfExtents.y);
-      maxY = Math.max(maxY, aabb.center.y + aabb.halfExtents.y);
-    }
-  }
-  return { minY, maxY };
-}
 
 /**
  * Design-comparison gallery for generated block models: every asset comes
@@ -105,32 +91,8 @@ export function createBlockmodelGalleryExperiment(): Experiment {
           entity.setEulerAngles(0, 180, 0); // specs model faces toward -z; player views from +z
           root.addChild(entity);
           if (targetHeight) {
-            // Generated candidate meshes (TRELLIS) ship with inverted winding —
-            // without this the model culls itself invisible. Review-only fix;
-            // an approved asset gets its winding corrected in cleanup.
-            const seen = new Set<Material>();
-            for (const component of entity.findComponents('render') as RenderComponent[]) {
-              for (const meshInstance of component.meshInstances) {
-                const mat = meshInstance.material as Material;
-                if (seen.has(mat)) continue;
-                seen.add(mat);
-                mat.cull = CULLFACE_NONE;
-                mat.update();
-              }
-            }
-            // Measure in world space, scale, re-measure, then drop the lowest
-            // point onto the pedestal — self-correcting, no stale math.
-            const before = worldBoundsY(entity);
-            const height = before.maxY - before.minY;
-            if (Number.isFinite(height) && height > 0.001) {
-              const factor = targetHeight / height;
-              entity.setLocalScale(factor, factor, factor);
-              const after = worldBoundsY(entity);
-              if (Number.isFinite(after.minY)) {
-                const p = entity.getPosition();
-                entity.setPosition(p.x, p.y + (0.3 - after.minY), p.z);
-              }
-            }
+            disableCulling(entity);
+            fitToHeight(entity, targetHeight, 0.3);
           }
           loaded.set(assetId, true);
           usedFallback.set(assetId, entity.name !== assetId);
