@@ -13,7 +13,12 @@ FROM caddy:2.11.4-alpine
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /app/dist /srv
 
-USER caddy
+RUN addgroup -S -g 10001 mcl \
+  && adduser -S -D -H -u 10001 -G mcl mcl \
+  && mkdir -p /data /config \
+  && chown -R mcl:mcl /srv /data /config
+
+USER mcl
 
 EXPOSE 8080
 
