@@ -23,5 +23,5 @@ The anchor sheets are painterly concept art. A browser prototype will not match 
 
 ## Open items
 
-- Image→3D service choice (Meshy / Tripo / open-source local) — research running; needs Ben's account/API-key decision before autonomous generation is possible.
+- Image→3D service choice — research done, see `IMAGE-TO-3D-RESEARCH.md` (recommendation: Tripo pay-as-you-go first, Meshy Pro for style preservation; Hunyuan3D excluded — EU license block). Needs Ben's account/API-key decision before autonomous generation is possible; verify Tripo's commercial terms for pay-as-you-go before first paid asset.
 - Model-sheets (Vorder-/Seiten-/Rückansicht) per creature would materially improve image→3D output — listed in MLOA:22544386 as next design artifacts.
