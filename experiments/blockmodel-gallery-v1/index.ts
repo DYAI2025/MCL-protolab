@@ -1,12 +1,16 @@
-import { Color, Entity, StandardMaterial, Vec3 } from 'playcanvas';
+import { CULLFACE_NONE, Color, Entity, StandardMaterial, Vec3 } from 'playcanvas';
+import type { Material, RenderComponent } from 'playcanvas';
 import registryDocument from '../../assets/registry/assets.json';
 import { createAssetRegistry, type AssetEntry } from '../../src/core/assets/asset-registry.ts';
 import type { Experiment, ExperimentContext } from '../../src/core/experiments/types.ts';
 import { instantiateAsset } from '../../src/runtime/assets/glb-loader.ts';
 import type { SceneContext } from '../../src/runtime/scene-context.ts';
 
-// One pedestal per generated model. Order = display order, left to right.
-const SHOWN: Array<{ assetId: string; label: string }> = [
+// One pedestal per model. Order = display order, left to right.
+// targetHeight rescales normalized GLBs (TRELLIS outputs ~unit-box models) to
+// their design scale; omitted = model is already authored in meters.
+const SHOWN: Array<{ assetId: string; label: string; targetHeight?: number }> = [
+  { assetId: 'creature.mugosh.trellis-s1', label: 'mugosh V2 (TRELLIS)', targetHeight: 3.4 },
   { assetId: 'creature.mugosh.blockmodel-a', label: 'mugosh A' },
   { assetId: 'creature.mugosh.blockmodel-b', label: 'mugosh B' },
   { assetId: 'creature.flammenwolf.blockmodel', label: 'flammenwolf' },
@@ -22,6 +26,20 @@ const material = (r: number, g: number, b: number) => {
   m.update();
   return m;
 };
+
+/** World-space vertical bounds over all render mesh instances (reads fresh). */
+function worldBoundsY(entity: Entity): { minY: number; maxY: number } {
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const component of entity.findComponents('render') as RenderComponent[]) {
+    for (const meshInstance of component.meshInstances) {
+      const aabb = meshInstance.aabb; // world-space, lazily synced on read
+      minY = Math.min(minY, aabb.center.y - aabb.halfExtents.y);
+      maxY = Math.max(maxY, aabb.center.y + aabb.halfExtents.y);
+    }
+  }
+  return { minY, maxY };
+}
 
 /**
  * Design-comparison gallery for generated block models: every asset comes
@@ -63,7 +81,7 @@ export function createBlockmodelGalleryExperiment(): Experiment {
     const spacing = 8;
     const offset = ((SHOWN.length - 1) * spacing) / 2;
 
-    SHOWN.forEach(({ assetId }, index) => {
+    SHOWN.forEach(({ assetId, targetHeight }, index) => {
       const x = index * spacing - offset;
       const pedestal = new Entity(`pedestal-${assetId}`);
       pedestal.setLocalScale(5, 0.3, 5);
@@ -83,6 +101,34 @@ export function createBlockmodelGalleryExperiment(): Experiment {
           entity.setPosition(x, 0.3, -6);
           entity.setEulerAngles(0, 180, 0); // specs model faces toward -z; player views from +z
           root.addChild(entity);
+          if (targetHeight) {
+            // Generated candidate meshes (TRELLIS) ship with inverted winding —
+            // without this the model culls itself invisible. Review-only fix;
+            // an approved asset gets its winding corrected in cleanup.
+            const seen = new Set<Material>();
+            for (const component of entity.findComponents('render') as RenderComponent[]) {
+              for (const meshInstance of component.meshInstances) {
+                const mat = meshInstance.material as Material;
+                if (seen.has(mat)) continue;
+                seen.add(mat);
+                mat.cull = CULLFACE_NONE;
+                mat.update();
+              }
+            }
+            // Measure in world space, scale, re-measure, then drop the lowest
+            // point onto the pedestal — self-correcting, no stale math.
+            const before = worldBoundsY(entity);
+            const height = before.maxY - before.minY;
+            if (Number.isFinite(height) && height > 0.001) {
+              const factor = targetHeight / height;
+              entity.setLocalScale(factor, factor, factor);
+              const after = worldBoundsY(entity);
+              if (Number.isFinite(after.minY)) {
+                const p = entity.getPosition();
+                entity.setPosition(p.x, p.y + (0.3 - after.minY), p.z);
+              }
+            }
+          }
           loaded.set(assetId, true);
           usedFallback.set(assetId, entity.name !== assetId);
         })
@@ -100,7 +146,8 @@ export function createBlockmodelGalleryExperiment(): Experiment {
       usedFallback: (id: string) => usedFallback.get(id) ?? null,
     };
 
-    scene.movePlayerTo(new Vec3(0, 1.2, 6));
+    // Spawn facing the Mugosh comparison cluster (V2 candidate + both grayboxes).
+    scene.movePlayerTo(new Vec3(-22, 1.2, 6));
   };
 
   return {

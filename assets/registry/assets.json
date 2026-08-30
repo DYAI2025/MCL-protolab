@@ -119,6 +119,18 @@
       "license": "project-owned",
       "provenance": "block placeholder listener/root offshoot from MLOA:32735234#Zhalm-Druhen; not final art",
       "fallback_asset_id": "environment.test.crate"
+    },
+    {
+      "asset_id": "creature.mugosh.trellis-s1",
+      "kind": "creature",
+      "path": "/assets/v2/mugosh-trellis-s1.glb",
+      "format": "glb",
+      "status": "candidate",
+      "version": "0.1.0",
+      "source": "scripts/image-to-3d/trellis.py via microsoft/TRELLIS.2 HF Space (ZeroGPU), seed 1, resolution 1024, decimation 100k, texture 1024",
+      "license": "TRELLIS.2 model MIT; generated output project-owned; V2 candidate pending review",
+      "provenance": "image-to-3D from concepts/art-direction/crops/mugosh-totenwelt-hero.png (V2 anchor MLOA:22544386); attempt 1 FAILED REVIEW — painterly background broke segmentation, mesh is scene confetti; regenerate from the -cut input after ZeroGPU quota reset",
+      "fallback_asset_id": "creature.mugosh.blockmodel-a"
     }
   ]
 }

@@ -24,7 +24,7 @@ test('all generated block models load through the registry without fallbacks', a
   );
 
   const ids = await page.evaluate(() => (window as unknown as { __blockgallery: BlockGalleryHook }).__blockgallery.ids());
-  expect(ids).toHaveLength(7);
+  expect(ids).toHaveLength(8); // 7 graybox block models + the first V2 TRELLIS candidate
   for (const id of ids) {
     const fallback = await page.evaluate(
       ([assetId]) => (window as unknown as { __blockgallery: BlockGalleryHook }).__blockgallery.usedFallback(assetId as string),
