@@ -10,7 +10,10 @@ import type { SceneContext } from '../../src/runtime/scene-context.ts';
 // targetHeight rescales normalized GLBs (TRELLIS outputs ~unit-box models) to
 // their design scale; omitted = model is already authored in meters.
 const SHOWN: Array<{ assetId: string; label: string; targetHeight?: number }> = [
-  { assetId: 'creature.mugosh.trellis-s1', label: 'mugosh V2 (TRELLIS)', targetHeight: 3.4 },
+  { assetId: 'creature.mugosh.tripo-s1', label: 'mugosh V2 (Tripo)', targetHeight: 3.4 },
+  { assetId: 'creature.eis-mugosh.tripo-s1', label: 'eis-mugosh V2 (Tripo)', targetHeight: 4.2 },
+  { assetId: 'creature.flammenwolf.tripo-s1', label: 'flammenwolf V2 (Tripo)', targetHeight: 2.2 },
+  { assetId: 'creature.veras.tripo-s1', label: 'veras V2 (Tripo, weak)', targetHeight: 1.0 },
   { assetId: 'creature.mugosh.blockmodel-a', label: 'mugosh A' },
   { assetId: 'creature.mugosh.blockmodel-b', label: 'mugosh B' },
   { assetId: 'creature.flammenwolf.blockmodel', label: 'flammenwolf' },

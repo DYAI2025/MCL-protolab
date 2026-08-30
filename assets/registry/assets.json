@@ -121,15 +121,51 @@
       "fallback_asset_id": "environment.test.crate"
     },
     {
-      "asset_id": "creature.mugosh.trellis-s1",
+      "asset_id": "creature.mugosh.tripo-s1",
       "kind": "creature",
-      "path": "/assets/v2/mugosh-trellis-s1.glb",
+      "path": "/assets/v2/mugosh-tripo-s1.glb",
       "format": "glb",
       "status": "candidate",
       "version": "0.1.0",
-      "source": "scripts/image-to-3d/trellis.py via microsoft/TRELLIS.2 HF Space (ZeroGPU), seed 1, resolution 1024, decimation 100k, texture 1024",
-      "license": "TRELLIS.2 model MIT; generated output project-owned; V2 candidate pending review",
-      "provenance": "image-to-3D from concepts/art-direction/crops/mugosh-totenwelt-hero.png (V2 anchor MLOA:22544386); attempt 1 FAILED REVIEW — painterly background broke segmentation, mesh is scene confetti; regenerate from the -cut input after ZeroGPU quota reset",
+      "source": "tripo-cli 0.3.1 image_to_model task bbefd4a9-bee7-4855-98f1-8b0dcc4b0674, model v3.1-20260211, seed 1, PBR detailed texture; simplified to 8% + 1k webp via gltf-transform 4.4.2",
+      "license": "generated on Tripo FREE wallet credits — assume CC BY 4.0 non-commercial: REVIEW/EVALUATION ONLY, regenerate under a paid tier before any release use",
+      "provenance": "image-to-3D from concepts/art-direction/crops/mugosh-totenwelt-cut.png (rembg cutout of the V2 anchor, MLOA:22544386); candidate until Ben approves in-game. Supersedes the failed TRELLIS attempt (see git history)",
+      "fallback_asset_id": "creature.mugosh.blockmodel-a"
+    },
+    {
+      "asset_id": "creature.flammenwolf.tripo-s1",
+      "kind": "creature",
+      "path": "/assets/v2/flammenwolf-tripo-s1.glb",
+      "format": "glb",
+      "status": "candidate",
+      "version": "0.1.0",
+      "source": "tripo-cli 0.3.1 image_to_model task f437e68b, model v3.1-20260211, seed 1, PBR; simplified 8% + 1k webp via gltf-transform 4.4.2",
+      "license": "generated on Tripo FREE wallet credits — assume CC BY 4.0 non-commercial: REVIEW/EVALUATION ONLY, regenerate under a paid tier before any release use",
+      "provenance": "image-to-3D from concepts/art-direction/crops/flammenwolf-hoellenzorn-cut.png (rembg cutout of the V2 anchor, MLOA:22544386); static mesh fire — live fire/embers/trail stay engine FX; candidate until Ben approves",
+      "fallback_asset_id": "creature.flammenwolf.blockmodel"
+    },
+    {
+      "asset_id": "creature.veras.tripo-s1",
+      "kind": "creature",
+      "path": "/assets/v2/veras-tripo-s1.glb",
+      "format": "glb",
+      "status": "candidate",
+      "version": "0.1.0",
+      "source": "tripo-cli 0.3.1 image_to_model task 96f17e8f, model v3.1-20260211, seed 1, PBR; simplified 8% + 1k webp via gltf-transform 4.4.2",
+      "license": "generated on Tripo FREE wallet credits — assume CC BY 4.0 non-commercial: REVIEW/EVALUATION ONLY, regenerate under a paid tier before any release use",
+      "provenance": "image-to-3D from concepts/art-direction/crops/veras-hueterseelen-cut.png; WEAK candidate — the silky trail reconstructed as a flat ribbon; the FX-driven Veras (translucent core + engine glow/trail) likely stays the better representation",
+      "fallback_asset_id": "creature.veras.blockmodel"
+    },
+    {
+      "asset_id": "creature.eis-mugosh.tripo-s1",
+      "kind": "creature",
+      "path": "/assets/v2/eis-mugosh-tripo-s1.glb",
+      "format": "glb",
+      "status": "candidate",
+      "version": "0.1.0",
+      "source": "tripo-cli 0.3.1 image_to_model task 4f265ea9, model v3.1-20260211, seed 1, PBR; simplified 8% + 1k webp via gltf-transform 4.4.2",
+      "license": "generated on Tripo FREE wallet credits — assume CC BY 4.0 non-commercial: REVIEW/EVALUATION ONLY, regenerate under a paid tier before any release use",
+      "provenance": "image-to-3D from concepts/art-direction/crops/eis-mugosh-frostberge-cut.png (Eis-Mugosh sheet — TENTATIVE variant not yet in the bestiary page); candidate until Ben approves",
       "fallback_asset_id": "creature.mugosh.blockmodel-a"
     }
   ]
