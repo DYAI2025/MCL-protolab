@@ -12,7 +12,7 @@ type EditorHook = {
   clear: () => void;
 };
 
-test.setTimeout(90_000);
+test.setTimeout(180_000); // V2 GLB loads + behavior sim under SwiftShader on CI
 
 test('world editor: place, save/load roundtrip, play mode with live sound network', async ({ page }, testInfo) => {
   const errors: string[] = [];

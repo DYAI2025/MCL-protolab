@@ -7,7 +7,9 @@ type BlockGalleryHook = {
   usedFallback: (id: string) => boolean | null;
 };
 
-test.setTimeout(90_000);
+// Eleven registry models, four of them 4 MB textured V2 GLBs, all through
+// SwiftShader on CI — triple the local-comfortable budget.
+test.setTimeout(180_000);
 
 test('all generated block models load through the registry without fallbacks', async ({ page }, testInfo) => {
   const errors: string[] = [];
