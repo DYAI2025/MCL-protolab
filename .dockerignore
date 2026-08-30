@@ -1,0 +1,10 @@
+.git
+.github
+.claude
+.tripo
+node_modules
+dist
+artifacts
+playwright-report
+test-results
+*.local

@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: ['production-deployment.spec.ts'],
   outputDir: './artifacts/test-results',
   reporter: [['list']],
   // CI renders through SwiftShader — parallel heavy WebGL specs starve each

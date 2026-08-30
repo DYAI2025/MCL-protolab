@@ -1,6 +1,7 @@
 node_modules/
 dist/
 artifacts/test-results/
+artifacts/test-results-preview/
 playwright-report/
 .DS_Store
 *.local
