@@ -81,6 +81,10 @@ npm run typecheck && npm run lint && npm run boundaries && npm run validate:cont
 
 **Art direction is V2 — semi-realistic fantasy RPG** (Confluence MLOA:22544386; anchors in `concepts/art-direction/`; lab rules in `docs/assets/ART_DIRECTION.md`). Blocky generated models (spec → GLB + Blockbench-editable `.bbmodel`, `docs/runtime/BLOCKBENCH.md`) are **graybox standins**, not the target look. Hero creatures come from the V2 import path in ART_DIRECTION.md. Compare designs side by side in `/?experiment=blockmodel-gallery-v1`.
 
+## Building worlds
+
+`/?experiment=world-editor-v1` places registry assets in a world, saves layouts as schema-validated JSON (`worlds/`, `schemas/world-layout.schema.json`) and playtests them with live creature behaviors — see `docs/runtime/WORLD_EDITOR.md`.
+
 ## Promotion rule
 
 Logic stays experiment-local until **two independent experiments** need the same behavior contract — only then does it move into `src/core/` (with tests) or `src/runtime/`. Duplication between experiments is correct, not a smell.

@@ -65,4 +65,6 @@ Run a single unit test: `npx vitest run src/core/events/emitter.test.ts`. Single
 
 First playable target after the foundation: `zhalm-forest-v1` — a third-person forest encounter testing the Druhen/Zhalm sound-network hypothesis (sound → root trigger → network alert → investigate/chase). User preference is third-person.
 
+World building: `/?experiment=world-editor-v1` — in-runtime editor (place/move/save registry assets, edit↔play toggle, live behaviors incl. the promoted sound network from `src/core/sound-network/`); layouts live in `worlds/*.json` against `schemas/world-layout.schema.json`; docs in `docs/runtime/WORLD_EDITOR.md`.
+
 **Art direction is V2 — semi-realistic standalone fantasy RPG** (Confluence MLOA:22544386; the V1 Minecraft/voxel language is SUPERSEDED). Binding visual anchors live in `concepts/art-direction/`; lab-side rules in `docs/assets/ART_DIRECTION.md`. Blocky generated models are graybox standins only — never present them as the target look.
