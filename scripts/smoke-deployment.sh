@@ -24,12 +24,25 @@ docker run --detach \
   --publish "127.0.0.1:${host_port}:8080" \
   "${image_tag}" >/dev/null
 
+http_ready=false
 for _ in $(seq 1 30); do
   if curl --fail --silent --show-error "${base_url}/healthz" >/dev/null; then
+    http_ready=true
     break
+  fi
+  if test "$(docker inspect --format '{{.State.Running}}' "${container_name}")" != "true"; then
+    echo "container stopped before HTTP readiness" >&2
+    docker logs "${container_name}" >&2 || true
+    exit 1
   fi
   sleep 2
 done
+
+if test "${http_ready}" != "true"; then
+  echo "container did not become HTTP-ready" >&2
+  docker logs "${container_name}" >&2 || true
+  exit 1
+fi
 
 curl --fail --silent --show-error "${base_url}/healthz" | grep -qx 'ok'
 curl --fail --silent --show-error "${base_url}/?experiment=world-editor-v1" >/dev/null
@@ -40,6 +53,24 @@ missing_status="$(curl --silent --output /dev/null --write-out '%{http_code}' "$
 test "${missing_status}" = "404"
 
 docker exec "${container_name}" sh -c 'test "$(id -u)" -ne 0'
-test "$(docker inspect --format '{{.State.Health.Status}}' "${container_name}")" = "healthy"
+
+health_status="starting"
+for _ in $(seq 1 30); do
+  health_status="$(docker inspect --format '{{.State.Health.Status}}' "${container_name}")"
+  if test "${health_status}" = "healthy"; then
+    break
+  fi
+  if test "${health_status}" = "unhealthy"; then
+    docker logs "${container_name}" >&2 || true
+    exit 1
+  fi
+  sleep 2
+done
+
+if test "${health_status}" != "healthy"; then
+  echo "container health check timed out with status: ${health_status}" >&2
+  docker logs "${container_name}" >&2 || true
+  exit 1
+fi
 
 echo "deployment container smoke passed: ${image_tag} on ${base_url}"

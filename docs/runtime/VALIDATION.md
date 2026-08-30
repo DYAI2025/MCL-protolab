@@ -29,7 +29,7 @@ An unexecuted gate is `not_run`, never `passed`. Every gate below was also seen 
 - **unit**: every TDD module was run red (module-not-found) before implementation.
 - **e2e**: seen red on missing Chromium binary, on synthetic-keyboard movement (led to the documented `stepForward` hook) and on the gallery 30 s timeout (led to the documented 90 s budget).
 - **e2e:preview**: initially red because the preview Playwright configuration did not exist; after implementation the local run reached the browser launch and stopped on the missing Chromium binary. CI installs Chromium before executing the preserved gate.
-- **deployment container**: the smoke gate exits 127 locally when Docker is unavailable instead of reporting a false pass. Its first Docker-capable CI run then failed with `unable to find user caddy`, proving the non-root start assertion caught an invalid image assumption; the runtime now creates an explicit unprivileged `mcl` user before startup.
+- **deployment container**: the smoke gate exits 127 locally when Docker is unavailable instead of reporting a false pass. Its first Docker-capable CI run failed with `unable to find user caddy`, proving the non-root start assertion caught an invalid image assumption; the runtime now creates an explicit unprivileged `mcl` user. The next run exposed a readiness race between HTTP startup and Docker's first scheduled health probe; the smoke now waits for and diagnoses both states independently.
 
 ## Evidence artifacts
 
