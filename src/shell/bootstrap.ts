@@ -2,6 +2,7 @@ import { Vec3 } from 'playcanvas';
 import { createBlockmodelGalleryExperiment } from '../../experiments/blockmodel-gallery-v1/index.ts';
 import { createCreatureFxGalleryExperiment } from '../../experiments/creature-fx-gallery/index.ts';
 import { createPlaygroundExperiment } from '../../experiments/playground/index.ts';
+import { createWorldEditorExperiment } from '../../experiments/world-editor-v1/index.ts';
 import { createZhalmForestExperiment } from '../../experiments/zhalm-forest-v1/index.ts';
 import { createTunables } from '../core/config/tunables.ts';
 import { createEmitter } from '../core/events/emitter.ts';
@@ -70,6 +71,7 @@ export async function bootstrap(canvas: HTMLCanvasElement): Promise<void> {
   registry.register(createCreatureFxGalleryExperiment());
   registry.register(createZhalmForestExperiment());
   registry.register(createBlockmodelGalleryExperiment());
+  registry.register(createWorldEditorExperiment());
 
   const requested = new URLSearchParams(window.location.search).get('experiment') ?? 'playground';
   registry.load(requested, ctx);
