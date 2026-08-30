@@ -64,3 +64,5 @@ Run a single unit test: `npx vitest run src/core/events/emitter.test.ts`. Single
 ## Context
 
 First playable target after the foundation: `zhalm-forest-v1` — a third-person forest encounter testing the Druhen/Zhalm sound-network hypothesis (sound → root trigger → network alert → investigate/chase). User preference is third-person.
+
+**Art direction is V2 — semi-realistic standalone fantasy RPG** (Confluence MLOA:22544386; the V1 Minecraft/voxel language is SUPERSEDED). Binding visual anchors live in `concepts/art-direction/`; lab-side rules in `docs/assets/ART_DIRECTION.md`. Blocky generated models are graybox standins only — never present them as the target look.

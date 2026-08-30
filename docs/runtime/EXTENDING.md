@@ -77,9 +77,9 @@ npm run typecheck && npm run lint && npm run boundaries && npm run validate:cont
 - `src/runtime/` and `src/core/` never import experiment code.
 - Violations fail `npm run boundaries` / `npm run lint` — locally and in CI.
 
-## Blocky 3D assets
+## 3D assets
 
-Generated block models (spec → GLB + Blockbench-editable `.bbmodel`) have their own pipeline — see `docs/runtime/BLOCKBENCH.md`. Compare designs side by side in `/?experiment=blockmodel-gallery-v1`.
+**Art direction is V2 — semi-realistic fantasy RPG** (Confluence MLOA:22544386; anchors in `concepts/art-direction/`; lab rules in `docs/assets/ART_DIRECTION.md`). Blocky generated models (spec → GLB + Blockbench-editable `.bbmodel`, `docs/runtime/BLOCKBENCH.md`) are **graybox standins**, not the target look. Hero creatures come from the V2 import path in ART_DIRECTION.md. Compare designs side by side in `/?experiment=blockmodel-gallery-v1`.
 
 ## Promotion rule
 

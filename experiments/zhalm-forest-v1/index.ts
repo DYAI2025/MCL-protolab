@@ -1,7 +1,9 @@
 import { Color, Entity, StandardMaterial, Vec3 } from 'playcanvas';
 import type { AppBase } from 'playcanvas';
+import type { CameraFrame } from 'playcanvas';
 import type { Experiment, ExperimentContext } from '../../src/core/experiments/types.ts';
 import { clearFog, setFog } from '../../src/runtime/fx/atmosphere.ts';
+import { createPostChain } from '../../src/runtime/fx/post.ts';
 import { emissiveMaterial, translucentMaterial } from '../../src/runtime/fx/emissive.ts';
 import { addParticles } from '../../src/runtime/fx/particles.ts';
 import type { SceneContext } from '../../src/runtime/scene-context.ts';
@@ -43,6 +45,7 @@ export function createZhalmForestExperiment(): Experiment {
   let appRef: AppBase | null = null;
   let onUpdate: ((dt: number) => void) | null = null;
   let chip: HTMLElement | null = null;
+  let post: CameraFrame | null = null;
 
   return {
     id: 'zhalm-forest-v1',
@@ -101,12 +104,19 @@ export function createZhalmForestExperiment(): Experiment {
       moon.setEulerAngles(55, -30, 0);
       root.addChild(moon);
 
-      setFog(app, new Color(0.05, 0.07, 0.09), 0.022);
+      // Darker than pre-ACES values: TONEMAP_ACES2 lifts the low end, so the
+      // night reads grey unless fog/sky start deeper.
+      setFog(app, new Color(0.018, 0.026, 0.038), 0.022);
 
       // Night sky: match the camera clear color to the fog so the horizon
       // dissolves instead of showing the daytime playground blue.
       const cameraEntity = app.root.findByName('camera') as Entity | null;
-      if (cameraEntity?.camera) cameraEntity.camera.clearColor = new Color(0.05, 0.07, 0.09);
+      if (cameraEntity?.camera) {
+        cameraEntity.camera.clearColor = new Color(0.018, 0.026, 0.038);
+        // V2 look pass (MLOA:22544386): cinematic tone mapping + restrained
+        // bloom so node pulses and the grove heart bloom against the night.
+        post = createPostChain(app, cameraEntity.camera, 0.025);
+      }
 
       // --- sound network -------------------------------------------------
       const network: SoundNetwork = createSoundNetwork(NODE_SPECS, {
@@ -364,6 +374,7 @@ export function createZhalmForestExperiment(): Experiment {
     destroy() {
       if (appRef && onUpdate) appRef.off('update', onUpdate);
       onUpdate = null;
+      if (post) { post.destroy(); post = null; }
       if (appRef) {
         clearFog(appRef);
         const cameraEntity = appRef.root.findByName('camera') as Entity | null;
