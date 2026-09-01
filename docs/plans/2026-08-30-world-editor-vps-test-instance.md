@@ -1,9 +1,9 @@
 # World Editor VPS Test Instance Implementation Plan
 
 Plan path: `docs/plans/2026-08-30-world-editor-vps-test-instance.md`
-Status: blocked
+Status: in_progress — repository, CI, VPS loopback and browser-live verified; stable private HTTPS blocked
 Owner/Executor: mixed (Codex repository implementation; authorized VPS operator for live deployment)
-Last updated: 2026-08-30
+Last updated: 2026-09-02
 
 <!-- GOAL_START -->
 Goal: Private, persistent VPS test URL for `world-editor-v1`
@@ -40,9 +40,9 @@ Reference-Doc: `docs/runtime/VPS_TEST_INSTANCE.md`
 ## Evidence and source boundary
 
 - Provided evidence: user reports the local editor at `http://localhost:5173/?experiment=world-editor-v1` and explicitly requests planning, critical validation, implementation, GitHub, and Confluence documentation.
-- Inspected evidence: PR #3 head `9da84c0f52626e878988c2264b1db3e9577a1a82`; `AGENTS.md`; ADR-0002/0003; `package.json`; `vite.config.ts`; `playwright.config.ts`; `experiments/world-editor-v1/index.ts`; `e2e/world-editor.spec.ts`; `docs/runtime/WORLD_EDITOR.md`; Confluence page `32604163` and its empty descendant list.
+- Inspected evidence: PR #3 head `9da84c0f52626e878988c2264b1db3e9577a1a82`; PR #4 runtime-source head `011caef22686b3396ca84d24d6dd82724f26402a`; CI run `33316998826`; `AGENTS.md`; ADR-0002/0003/0004; repository deployment package and tests; live VPS filesystem, image and container metadata; loopback HTTP behavior; browser persistence through a temporary SSH tunnel; DNS resolution; nginx presence; Confluence pages `32604163` and `42467332`; Jira `MCL-70`.
 - Current behavior: autosave uses `localStorage` key `mcl-protolab.world-editor.autosave`; repo worlds are bundled at build time; no backend exists.
-- Not inspected/unavailable: live VPS filesystem, Coolify project configuration, DNS control plane, TLS termination, and public URL response.
+- Not inspected/unavailable: Coolify application configuration for this prototype, DNS control-plane write access, TLS termination for the planned hostname, reverse-proxy access-control configuration, and final HTTPS response.
 
 ## Assumptions, missing information, open questions, blockers
 
@@ -64,7 +64,19 @@ Reference-Doc: `docs/runtime/VPS_TEST_INSTANCE.md`
 
 ### BLOCKER
 
-- The current executor cannot resolve or SSH to `srv1308064.hstgr.cloud` and has no VPS/Coolify connector. Live deployment, DNS mutation, and runtime smoke cannot be truthfully completed from this environment.
+- The planned hostname `mcl-test.poersch.online` has no A/AAAA record. Creating a publicly reachable route before the private-access mechanism is selected would expand the authorized scope.
+- Tailscale is installed on the VPS but the node reports offline, so it does not currently provide the intended private HTTPS path.
+- Therefore DNS, certificate, access control and the final HTTPS/browser smoke remain `not_run`; loopback runtime evidence does not satisfy the Done-Definition.
+
+## Execution update — 2026-09-02
+
+- Jira tracked exception: `MCL-70`, status `In Arbeit`, deliberately outside Sprint 2.
+- GitHub: draft PR #4 is stacked on PR #3. Runtime-source commit `011caef22686b3396ca84d24d6dd82724f26402a` passed Actions run `33316998826`.
+- VPS: exact source image `mcl-protolab-test:011caef` / `sha256:ee8b7bff26e14a23502d2f9285181506e1986df2e5661a00ab3bb700ecb93431` ran healthy as UID 10001 with `unless-stopped`, bound only to `127.0.0.1:3012`.
+- Real-boundary smoke: health, editor query, Ammo WASM, representative GLB, missing-path 404 and container restart all produced the expected observed result.
+- Browser-live smoke: unique placement autosaved and survived reload plus tab reopen; export produced valid JSON; import into a clean browser context restored an identical world; zero console/page errors were observed.
+- Confluence: child page `42467332` records the tracked-exception scope, evidence classes and remaining blocker under the Prototype Lab page.
+- Remaining gates: stable private DNS/TLS/access-control path and final-origin browser smoke are blocked; PR #3 human play acceptance remains `not_run` and cannot be self-certified.
 
 ## Requirements
 

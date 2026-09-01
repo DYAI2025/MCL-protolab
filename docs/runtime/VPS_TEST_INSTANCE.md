@@ -7,12 +7,32 @@ This runbook packages and operates the static `world-editor-v1` prototype. It do
 | Layer | Status | Evidence |
 |---|---|---|
 | Repository package | implemented | `Dockerfile`, `deploy/Caddyfile`, deployment smoke script |
-| Production build | PASS locally | `npm run build`, 2026-08-30 |
-| Preview browser persistence | not_run locally | Playwright browser download timed out; CI is the executable Linux gate |
-| Container smoke | not_run locally | Docker is unavailable in the current executor; CI owns this gate |
-| VPS/DNS/TLS/live URL | blocked | no authorized, reachable VPS/Coolify control path in the current executor |
+| Production build | PASS | CI run `33316998826` and the image built on the VPS from runtime-source commit `011caef22686b3396ca84d24d6dd82724f26402a` |
+| Preview browser persistence | PASS | CI plus browser-live verification through a temporary SSH tunnel to the real VPS, 2026-09-02 |
+| Container smoke | PASS | dedicated CI job plus real VPS health, asset, 404, non-root and restart checks |
+| VPS loopback runtime | PASS | healthy container bound only to `127.0.0.1:3012`, 2026-09-02 |
+| Stable DNS/TLS/private URL | blocked | `mcl-test.poersch.online` has no A/AAAA record; TLS and access control remain `not_run` |
 
 The intended URL is `https://mcl-test.poersch.online`. It is a plan value, not a verified live endpoint, until the external checks below pass.
+
+## Verified VPS loopback deployment — 2026-09-02
+
+The repository package was deployed on `srv1308064.hstgr.cloud` from runtime-source commit
+`011caef22686b3396ca84d24d6dd82724f26402a`. This is the implementation commit used for
+the observed runtime; later documentation-only commits do not retroactively change that evidence.
+
+- Image tag: `mcl-protolab-test:011caef`
+- Image ID: `sha256:ee8b7bff26e14a23502d2f9285181506e1986df2e5661a00ab3bb700ecb93431`
+- Container: `mcl-protolab-test` (`c10212...`)
+- Runtime: UID `10001`, restart policy `unless-stopped`, loopback-only host binding `127.0.0.1:3012`
+- HTTP evidence: `/healthz` returned `ok`; the editor query, Ammo WASM and a representative GLB returned successfully; a missing path returned 404
+- Restart evidence: the same container returned to `running/healthy` after an observed container restart
+- Browser-live evidence: place unique sensor → autosave → reload → close/reopen tab → export valid JSON → open a clean browser context → import the JSON → identical serialized world
+- Browser diagnostics: zero console errors and zero page errors during the observed flow
+
+The browser used a temporary SSH tunnel to the loopback-bound service. The tunnel was removed after
+the check. This evidence is `browser-live` for the VPS runtime, but it is not evidence for DNS, TLS,
+reverse-proxy access control or the final public/private hostname.
 
 ## Runtime contract
 
