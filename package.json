@@ -13,7 +13,8 @@
     "validate:contracts": "node scripts/validate-contracts.mjs",
     "generate:assets": "node scripts/blockmodel/build.mjs",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:preview": "npm run build && playwright test --config=playwright.preview.config.ts"
   },
   "dependencies": {
     "playcanvas": "2.21.4"

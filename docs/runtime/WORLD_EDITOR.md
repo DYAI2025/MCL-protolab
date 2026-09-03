@@ -26,9 +26,15 @@ npm run dev   # → http://localhost:5173/?experiment=world-editor-v1
 
 ## Saving worlds
 
-- **Autosave**: every change goes to browser localStorage and is restored on reload.
+- **Autosave**: every change goes to browser `localStorage` key `mcl-protolab.world-editor.autosave` and is restored on reload.
 - **Export/Import**: JSON download / file picker — the file validates against `schemas/world-layout.schema.json` (`npm run validate:contracts` covers every file in `worlds/`).
 - **Repo worlds**: drop an exported file into `worlds/` and commit — it appears in the "load repo world" dropdown (bundled at build time). `worlds/first-glade.json` is the demo encounter.
+
+### Deployed test mode
+
+The private VPS test instance uses the same static production build and the same browser-local autosave. Persistence is scoped to the exact origin and browser profile: a reload, browser restart or container redeploy at the same HTTPS URL retains the autosave, while another hostname, protocol, port, profile or cleared site data does not. Export important layouts to JSON; browser autosave is neither shared storage nor a canonical backup.
+
+Deployment and rollback instructions live in [`VPS_TEST_INSTANCE.md`](./VPS_TEST_INSTANCE.md). The intended external URL must not be described as live until its HTTPS and browser persistence checks have passed.
 
 ## Behaviors
 
