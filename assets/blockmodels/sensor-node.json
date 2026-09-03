@@ -1,0 +1,11 @@
+{
+  "name": "sensor-node",
+  "design_source": "MLOA:32735234#Zhalm-Druhen — smaller listener/root offshoots distributed in the terrain; camouflaged alarm roots; violet sensor orb. Pulse glow is engine FX.",
+  "cubes": [
+    { "from": [-0.55, 0.0, -0.55], "to": [0.55, 0.22, 0.55], "color": [0.11, 0.08, 0.14] },
+    { "from": [-0.32, 0.22, -0.32], "to": [0.32, 0.5, 0.32], "color": [0.14, 0.1, 0.17] },
+    { "from": [-0.2, 0.5, -0.2], "to": [0.2, 0.9, 0.2], "color": [0.55, 0.12, 0.9] },
+    { "from": [-0.75, 0.0, -0.14], "to": [-0.55, 0.16, 0.14], "color": [0.11, 0.08, 0.14] },
+    { "from": [0.55, 0.0, -0.14], "to": [0.75, 0.16, 0.14], "color": [0.11, 0.08, 0.14] }
+  ]
+}

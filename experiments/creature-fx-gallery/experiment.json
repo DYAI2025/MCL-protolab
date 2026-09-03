@@ -1,0 +1,27 @@
+{
+  "id": "creature-fx-gallery",
+  "title": "Creature FX gallery",
+  "hypothesis": "Placeholder silhouettes plus layered FX (emissive, particles, trails, light, fog, restrained bloom) are enough to judge each creature concept's readability goal before any real art or AI exists.",
+  "design_status": "TENTATIVE",
+  "source_refs": ["MLOA:32735234"],
+  "runtime_adapter": "playcanvas-2.21.4",
+  "mechanics": ["fx-layering", "state-switching", "scale-comparison"],
+  "assets": ["character.hero.placeholder", "environment.test.ground"],
+  "tunables": {
+    "player.walkSpeed": 5,
+    "player.sprintSpeed": 8,
+    "player.jumpForce": 600,
+    "camera.distance": 5,
+    "camera.sensitivity": 0.15
+  },
+  "success_signals": [
+    "All four concept placeholders render side by side at player-relative scale.",
+    "Each profile exposes at least one deterministic FX state switchable from a test hook.",
+    "Every FX layer can be disabled individually to compare readability and performance."
+  ],
+  "kill_criteria": [
+    "FX layers cannot be judged because the placeholder silhouettes are unreadable.",
+    "State switching is non-deterministic or crashes the runtime."
+  ],
+  "reset_strategy": "Destroy the gallery root entity, clear trails and global fog/post state, and rebuild every pedestal from the concept profiles. No backend state involved."
+}

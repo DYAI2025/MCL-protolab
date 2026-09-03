@@ -1,0 +1,61 @@
+# World editor (`world-editor-v1`)
+
+Build, save and playtest V2 world layouts inside the runtime — no code changes needed.
+
+```bash
+npm run dev   # → http://localhost:5173/?experiment=world-editor-v1
+```
+
+## Modes
+
+- **EDIT** (start): free fly camera — **right-mouse drag looks around**, `WASD` flies, `Space`/`C` up/down, `Shift` = fast, mouse wheel dollies. The left mouse button is reserved for editing. The status line in the WORLD EDITOR panel always shows mode, object count, alert level and selection.
+- **PLAY** (`Tab` or the big ▶ button): drops the third-person player at the yellow spawn ghost; all placed behaviors run — including the sound network formed by placed zhalm nodes. `Tab` again returns to EDIT and resets creatures to their placement homes.
+
+## Editing
+
+| Action | How |
+|---|---|
+| Place | choose an asset (and optional behavior) in the palette, click on empty ground |
+| **Place the player** | palette entry "🧍 Spieler-Spawn setzen", then click — the yellow ghost capsule marks the spawn |
+| **Player model** | "player model" dropdown swaps the capsule for any registry character/creature GLB when play starts (stored in the layout as `player_asset_id`) |
+| Select | click near a placed object (blue ring marks it) |
+| Move | drag the selected object |
+| Rotate / scale | `Q`/`E` · `+`/`-` |
+| Duplicate / delete | `D` · `Backspace` |
+| Grid snap (1 m) | `G` (on by default) |
+
+## Saving worlds
+
+- **Autosave**: every change goes to browser `localStorage` key `mcl-protolab.world-editor.autosave` and is restored on reload.
+- **Export/Import**: JSON download / file picker — the file validates against `schemas/world-layout.schema.json` (`npm run validate:contracts` covers every file in `worlds/`).
+- **Repo worlds**: drop an exported file into `worlds/` and commit — it appears in the "load repo world" dropdown (bundled at build time). `worlds/first-glade.json` is the demo encounter.
+
+### Deployed test mode
+
+The private VPS test instance uses the same static production build and the same browser-local autosave. Persistence is scoped to the exact origin and browser profile: a reload, browser restart or container redeploy at the same HTTPS URL retains the autosave, while another hostname, protocol, port, profile or cleared site data does not. Export important layouts to JSON; browser autosave is neither shared storage nor a canonical backup.
+
+Deployment and rollback instructions live in [`VPS_TEST_INSTANCE.md`](./VPS_TEST_INSTANCE.md). The intended external URL must not be described as live until its HTTPS and browser persistence checks have passed.
+
+## Behaviors
+
+Prototype simplification (documented): Mugosh horn states react to player *distance* as a proxy for the future relationship system (MCL-7).
+
+| Preset | What it does |
+|---|---|
+| `mugosh-guardian` | wanders its home; horn overlay blau → weiß → rot by player distance; red = slow pursuit |
+| `flammenwolf-hostile` | patrols; chases within 10 m (catch = respawn); ember particles + burn trail |
+| `veras-gentle` | hovers and drifts; silky trail; glows brighter when approached; never hostile |
+| `zhalm-node` | joins the shared sound network; orb glow follows network energy |
+| `zhalm-guardian` | investigates last noise when suspicious, chases when alerted (catch = respawn) |
+
+All placed zhalm nodes form ONE network per play session, using the `zhalm.*` inspector tunables (linkRange/pulseSpeed/decay apply on the next play start). No skeletons yet: creatures glide/turn rather than walk — rigged animation is a later round (Tripo auto-rig).
+
+## Free environment assets
+
+`scripts/fetch-polyhaven.mjs <asset_id> ...` downloads CC0 models from [Poly Haven](https://polyhaven.com/), packs them into single optimized GLBs under `public/assets/env/` (1k textures, 50 % simplify, webp) — then add a registry entry (license `CC0`, source URL) and they appear in the palette. Seven curated assets ship already (rocks, stumps, roots, a statue, a fort ruin).
+
+[Quaternius](https://quaternius.com/) CC0 packs (stylized — deliberate style break, Ben's call) are a manual download: grab a pack, copy the GLBs into `public/assets/env/`, run them through `gltf-transform` if large, register them. [poly.pizza](https://poly.pizza/) mirrors most packs with per-model GLB downloads.
+
+## Test hook
+
+`window.__editor`: `place(assetId,x,z,behavior?)` · `count()` · `serialize()` · `load(layout)` · `setMode('edit'|'play')` · `mode()` · `level()` · `noiseAt(x,z,r)` · `caught()` · `clear()` — used by `e2e/world-editor.spec.ts`.

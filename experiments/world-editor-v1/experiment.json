@@ -1,0 +1,45 @@
+{
+  "id": "world-editor-v1",
+  "title": "World editor",
+  "hypothesis": "A minimal in-runtime editor — palette from the asset registry, plane placement, transform keys, JSON persistence and an edit/play toggle with live creature behaviors — is enough for a designer to build, save and playtest V2 world layouts without touching code.",
+  "design_status": "TENTATIVE",
+  "source_refs": ["MLOA:22544386", "MLOA:32604163"],
+  "runtime_adapter": "playcanvas-2.21.4",
+  "mechanics": ["asset-placement", "transform-editing", "layout-persistence", "edit-play-toggle", "creature-behaviors", "sound-network"],
+  "assets": [
+    "creature.mugosh.tripo-s1",
+    "creature.eis-mugosh.tripo-s1",
+    "creature.flammenwolf.tripo-s1",
+    "creature.veras.tripo-s1",
+    "prop.zhalm.sensor-node.blockmodel",
+    "character.hero.placeholder",
+    "environment.test.ground"
+  ],
+  "tunables": {
+    "player.walkSpeed": 5,
+    "player.sprintSpeed": 8,
+    "player.jumpForce": 600,
+    "camera.distance": 5,
+    "camera.sensitivity": 0.15,
+    "zhalm.walkNoise": 3,
+    "zhalm.sprintNoise": 9,
+    "zhalm.linkRange": 14,
+    "zhalm.pulseSpeed": 10,
+    "zhalm.alertDecay": 0.12,
+    "zhalm.investigateSpeed": 3,
+    "zhalm.chaseSpeed": 6.5,
+    "zhalm.catchDistance": 1.4
+  },
+  "success_signals": [
+    "A layout built in the editor survives serialize -> reload -> load byte-identically.",
+    "Play mode drops the third-person player into the built world and every placed behavior runs.",
+    "Placed zhalm nodes form a working sound network without any code changes.",
+    "A designer can go from empty ground to a playable encounter in under ten minutes."
+  ],
+  "kill_criteria": [
+    "Placement/selection is too imprecise to position assets deliberately.",
+    "Mode switching corrupts world state or the player rig.",
+    "Behavior updates make editing sluggish below usable frame rates."
+  ],
+  "reset_strategy": "Editor mode: clear all placed entities and reload the last loaded layout. Play mode: return creatures to their placement homes, reset the sound network and teleport the player to the world spawn. No backend state involved."
+}

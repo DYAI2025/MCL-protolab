@@ -1,0 +1,35 @@
+{
+  "name": "mcl-protolab",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24.19.0" },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "boundaries": "depcruise --config .dependency-cruiser.cjs --output-type err src experiments",
+    "validate:contracts": "node scripts/validate-contracts.mjs",
+    "generate:assets": "node scripts/blockmodel/build.mjs",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "e2e:preview": "npm run build && playwright test --config=playwright.preview.config.ts"
+  },
+  "dependencies": {
+    "playcanvas": "2.21.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "26.2.0",
+    "ajv": "8.20.0",
+    "dependency-cruiser": "18.2.0",
+    "eslint": "10.9.0",
+    "eslint-import-resolver-typescript": "4.4.5",
+    "eslint-plugin-boundaries": "7.2.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.67.0",
+    "vite": "8.2.2",
+    "vitest": "4.1.11"
+  }
+}

@@ -11,4 +11,6 @@
 9. No backend, database, cloud service or deployment unless a separate architecture decision justifies it.
 10. An unexecuted validation gate is `not_run`, never `passed`.
 
-The active runtime mission is `docs/plans/2026-08-23-runtime-foundation-mission.md` **plus** `docs/plans/2026-08-23-runtime-foundation-audit-addendum.md`. The addendum hardens visual/creature requirements and takes precedence where it is more specific. Older planning JSON/ADR-0002 records are historical evidence when they still say the runtime exception is missing. Document exact setup, dev, test and smoke commands here only after they have actually been verified.
+The active runtime mission is `docs/plans/2026-08-23-runtime-foundation-mission.md` **plus** `docs/plans/2026-08-23-runtime-foundation-audit-addendum.md`. The addendum hardens visual/creature requirements and takes precedence where it is more specific. Older planning JSON/ADR-0002 records are historical evidence when they still say the runtime exception is missing.
+
+The runtime exists (PlayCanvas 2.21.4 — `docs/architecture/ADR-0003-runtime-foundation.md`). Verified setup/dev/gate commands: `docs/runtime/SETUP.md`. Gate results: `docs/runtime/VALIDATION.md`. Import-boundary rules are machine-enforced (`npm run boundaries`, `npm run lint`) — rules a linter or test can enforce live there, not in this file.

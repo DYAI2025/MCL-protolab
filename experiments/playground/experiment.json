@@ -1,0 +1,27 @@
+{
+  "id": "playground",
+  "title": "Neutral runtime playground",
+  "hypothesis": "A neutral primitive playground is sufficient to verify movement, camera, collision, gravity and reset without any Avaloria content.",
+  "design_status": "TENTATIVE",
+  "source_refs": ["MLOA:32604163#Stufe-4-Playground"],
+  "runtime_adapter": "playcanvas-2.21.4",
+  "mechanics": ["movement", "camera", "collision", "reset"],
+  "assets": ["character.hero.placeholder", "environment.test.ground", "environment.test.crate"],
+  "tunables": {
+    "player.walkSpeed": 5,
+    "player.sprintSpeed": 8,
+    "player.jumpForce": 600,
+    "camera.distance": 5,
+    "camera.sensitivity": 0.15
+  },
+  "success_signals": [
+    "Player walks, sprints and jumps over the ramp without falling through the ground.",
+    "A dynamic crate reacts visibly when the player pushes it.",
+    "Reset returns the player and every crate to the spawn state."
+  ],
+  "kill_criteria": [
+    "Movement or camera is unusable enough that gameplay observations cannot be made.",
+    "Physics stepping is not running (a dynamic body never falls)."
+  ],
+  "reset_strategy": "Teleport the player to spawn, zero its velocity, and rebuild every dynamic prop at its initial transform. No backend state involved."
+}

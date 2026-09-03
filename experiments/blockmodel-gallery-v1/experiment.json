@@ -1,0 +1,38 @@
+{
+  "id": "blockmodel-gallery-v1",
+  "title": "Block-model asset gallery",
+  "hypothesis": "Deterministically generated blocky GLB placeholders, built from the Confluence bestiary briefs, read as their intended silhouettes at player-relative scale — making cheap side-by-side design iteration (including variants of the same creature) possible before any real art exists.",
+  "design_status": "TENTATIVE",
+  "source_refs": ["MLOA:32735234"],
+  "runtime_adapter": "playcanvas-2.21.4",
+  "mechanics": ["asset-loading", "fallback-chain", "scale-comparison", "design-variants"],
+  "assets": [
+    "creature.mugosh.blockmodel-a",
+    "creature.mugosh.blockmodel-b",
+    "creature.flammenwolf.blockmodel",
+    "creature.veras.blockmodel",
+    "creature.zhalm.blockmodel",
+    "creature.steinwolf.blockmodel",
+    "prop.zhalm.sensor-node.blockmodel",
+    "character.hero.placeholder",
+    "environment.test.ground"
+  ],
+  "tunables": {
+    "player.walkSpeed": 5,
+    "player.sprintSpeed": 8,
+    "player.jumpForce": 600,
+    "camera.distance": 5,
+    "camera.sensitivity": 0.15
+  },
+  "success_signals": [
+    "All seven generated GLBs load through the asset registry without errors.",
+    "Each creature is recognizable as its bestiary brief from silhouette and color alone.",
+    "The two Mugosh design variants can be compared side by side against the reference capsule.",
+    "A broken GLB path falls back to the declared fallback asset instead of crashing."
+  ],
+  "kill_criteria": [
+    "Blocky generation cannot express a brief's silhouette even after spec iteration (tool failure).",
+    "GLB loading is unreliable enough that the registry path cannot be trusted (pipeline failure)."
+  ],
+  "reset_strategy": "Destroy the gallery root entity and rebuild every pedestal by reloading each asset from the registry. No backend state involved."
+}

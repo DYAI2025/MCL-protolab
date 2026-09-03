@@ -1,0 +1,43 @@
+name: gates
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Generated GLBs must be byte-identical to their committed specs.
+      - run: npm run generate:assets
+      - run: git diff --exit-code -- public/assets/generated assets/blockmodels/bbmodel
+      - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run boundaries
+      - run: npm run validate:contracts
+      - run: npm test
+      - run: npm run build
+      - run: npm run e2e
+      - run: npm run e2e:preview
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-evidence
+          path: |
+            artifacts/screens/
+            artifacts/test-results/
+            artifacts/test-results-preview/
+
+  deployment-container:
+    needs: gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./scripts/smoke-deployment.sh
