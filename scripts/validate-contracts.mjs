@@ -31,6 +31,13 @@ if (existsSync('schemas/creature-concept.schema.json') && existsSync('concepts/c
   }
 }
 
+// Every world state document, if the world-state schema is present.
+if (existsSync('schemas/world-state.schema.json') && existsSync('states')) {
+  for (const f of readdirSync('states').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/world-state.schema.json', join('states', f)]);
+  }
+}
+
 let failed = 0;
 for (const [schemaPath, docPath] of pairs) {
   const validate = ajv.compile(read(schemaPath));
