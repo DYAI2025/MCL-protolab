@@ -38,7 +38,10 @@
       "type": "object"
     },
     "open_points": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   }
 }

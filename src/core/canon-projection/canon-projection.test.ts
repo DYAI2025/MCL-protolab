@@ -186,4 +186,26 @@ describe('CanonProjection schema', () => {
     expect(validate.errors).not.toBeNull();
     expect(validate.errors!.some((e) => e.keyword === 'additionalProperties')).toBe(true);
   });
+
+  it('validates CanonProjection with string items in open_points', () => {
+    const withStringOpenPoints = {
+      ...minimalValidCanonProjection,
+      open_points: ['engine remains undecided'],
+    };
+    expect(validate(withStringOpenPoints)).toBe(true);
+    expect(validate.errors).toBeNull();
+  });
+
+  it('rejects CanonProjection with numeric items in open_points', () => {
+    const withNumericOpenPoints = {
+      ...minimalValidCanonProjection,
+      open_points: [42],
+    };
+    const valid = validate(withNumericOpenPoints);
+    expect(valid).toBe(false);
+    expect(validate.errors).not.toBeNull();
+    expect(validate.errors!.some(
+      (e) => e.keyword === 'type' && e.params?.type === 'string',
+    )).toBe(true);
+  });
 });
