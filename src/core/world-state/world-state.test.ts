@@ -8,16 +8,16 @@ const validate = ajv.compile(schema);
 
 const minimalValidWorldState = {
   state_id: 'test-state-001',
-  entities: [],
-  locations: [],
-  factions: [],
-  relationships: [],
-  quests: [],
-  inventory: [],
+  entities: {},
+  locations: {},
+  factions: {},
+  relationships: {},
+  quests: {},
+  inventory: {},
   world_flags: {},
-  calendar: { day: 1, season: 'spring' },
+  calendar: {},
   active_events: [],
-  source_refs: ['Confluence:64815106'],
+  source_refs: [],
   revision: 1,
 };
 
@@ -51,8 +51,9 @@ describe('WorldState schema', () => {
     const valid = validate(withoutStateId);
     expect(valid).toBe(false);
     expect(validate.errors).not.toBeNull();
-    const paths = validate.errors!.map((e) => e.instancePath);
-    expect(paths.some((p) => p === '/state_id' || p === '')).toBe(true);
+    expect(validate.errors!.some(
+      (e) => e.keyword === 'required' && e.params.missingProperty === 'state_id',
+    )).toBe(true);
   });
 
   it('rejects a WorldState missing revision', () => {
@@ -72,8 +73,9 @@ describe('WorldState schema', () => {
     const valid = validate(withoutRevision);
     expect(valid).toBe(false);
     expect(validate.errors).not.toBeNull();
-    const paths = validate.errors!.map((e) => e.instancePath);
-    expect(paths.some((p) => p === '/revision' || p === '')).toBe(true);
+    expect(validate.errors!.some(
+      (e) => e.keyword === 'required' && e.params.missingProperty === 'revision',
+    )).toBe(true);
   });
 
   it('rejects a WorldState missing source_refs', () => {
@@ -93,8 +95,9 @@ describe('WorldState schema', () => {
     const valid = validate(withoutSourceRefs);
     expect(valid).toBe(false);
     expect(validate.errors).not.toBeNull();
-    const paths = validate.errors!.map((e) => e.instancePath);
-    expect(paths.some((p) => p === '/source_refs' || p === '')).toBe(true);
+    expect(validate.errors!.some(
+      (e) => e.keyword === 'required' && e.params.missingProperty === 'source_refs',
+    )).toBe(true);
   });
 
   it('rejects a WorldState with an unexpected top-level property', () => {

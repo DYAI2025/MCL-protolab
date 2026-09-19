@@ -22,22 +22,22 @@
       "minLength": 1
     },
     "entities": {
-      "type": "array"
+      "type": "object"
     },
     "locations": {
-      "type": "array"
+      "type": "object"
     },
     "factions": {
-      "type": "array"
+      "type": "object"
     },
     "relationships": {
-      "type": "array"
+      "type": "object"
     },
     "quests": {
-      "type": "array"
+      "type": "object"
     },
     "inventory": {
-      "type": "array"
+      "type": "object"
     },
     "world_flags": {
       "type": "object"
@@ -50,7 +50,6 @@
     },
     "source_refs": {
       "type": "array",
-      "minItems": 1,
       "items": {
         "type": "string"
       }

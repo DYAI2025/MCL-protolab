@@ -1,17 +1,14 @@
 {
   "state_id": "glade-initial-state",
-  "entities": [],
-  "locations": [],
-  "factions": [],
-  "relationships": [],
-  "quests": [],
-  "inventory": [],
+  "entities": {},
+  "locations": {},
+  "factions": {},
+  "relationships": {},
+  "quests": {},
+  "inventory": {},
   "world_flags": {},
-  "calendar": {
-    "day": 1,
-    "season": "spring"
-  },
+  "calendar": {},
   "active_events": [],
-  "source_refs": ["Confluence:64815106"],
+  "source_refs": ["MLOA:64815106"],
   "revision": 1
 }
