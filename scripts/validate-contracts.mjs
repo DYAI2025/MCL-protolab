@@ -59,6 +59,13 @@ if (existsSync('schemas/director-run.schema.json') && existsSync('director-runs'
   }
 }
 
+// Every director proposal document, if the director-proposal schema is present.
+if (existsSync('schemas/director-proposal.schema.json') && existsSync('proposals')) {
+  for (const f of readdirSync('proposals').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/director-proposal.schema.json', join('proposals', f)]);
+  }
+}
+
 let failed = 0;
 for (const [schemaPath, docPath] of pairs) {
   const validate = ajv.compile(read(schemaPath));
