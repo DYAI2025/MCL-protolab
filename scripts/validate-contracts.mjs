@@ -38,6 +38,13 @@ if (existsSync('schemas/world-state.schema.json') && existsSync('states')) {
   }
 }
 
+// Every canon projection document, if the canon-projection schema is present.
+if (existsSync('schemas/canon-projection.schema.json') && existsSync('projections')) {
+  for (const f of readdirSync('projections').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/canon-projection.schema.json', join('projections', f)]);
+  }
+}
+
 let failed = 0;
 for (const [schemaPath, docPath] of pairs) {
   const validate = ajv.compile(read(schemaPath));
