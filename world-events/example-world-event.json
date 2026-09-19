@@ -1,0 +1,10 @@
+{
+  "event_id": "zhalm-network-alert-001",
+  "event_type": "NETWORK_ALERT",
+  "timestamp": "2026-09-19T00:00:00Z",
+  "actor_refs": [],
+  "location_ref": "zhalm-forest",
+  "payload": {},
+  "source_refs": ["MLOA:64815106"],
+  "evidence_class": "observed_gameplay"
+}

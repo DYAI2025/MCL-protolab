@@ -45,6 +45,20 @@ if (existsSync('schemas/canon-projection.schema.json') && existsSync('projection
   }
 }
 
+// Every world event document, if the world-event schema is present.
+if (existsSync('schemas/world-event.schema.json') && existsSync('world-events')) {
+  for (const f of readdirSync('world-events').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/world-event.schema.json', join('world-events', f)]);
+  }
+}
+
+// Every director run document, if the director-run schema is present.
+if (existsSync('schemas/director-run.schema.json') && existsSync('director-runs')) {
+  for (const f of readdirSync('director-runs').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/director-run.schema.json', join('director-runs', f)]);
+  }
+}
+
 let failed = 0;
 for (const [schemaPath, docPath] of pairs) {
   const validate = ajv.compile(read(schemaPath));
