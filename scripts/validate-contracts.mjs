@@ -66,6 +66,13 @@ if (existsSync('schemas/director-proposal.schema.json') && existsSync('proposals
   }
 }
 
+// Every state transition document, if the state-transition schema is present.
+if (existsSync('schemas/state-transition.schema.json') && existsSync('transitions')) {
+  for (const f of readdirSync('transitions').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/state-transition.schema.json', join('transitions', f)]);
+  }
+}
+
 let failed = 0;
 for (const [schemaPath, docPath] of pairs) {
   const validate = ajv.compile(read(schemaPath));
