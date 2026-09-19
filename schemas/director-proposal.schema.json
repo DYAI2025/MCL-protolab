@@ -41,7 +41,11 @@
       "type": "array"
     },
     "transition_intent": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     },
     "source_refs": {
       "type": "array",

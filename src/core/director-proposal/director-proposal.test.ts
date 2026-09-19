@@ -371,4 +371,56 @@ describe('DirectorProposal schema', () => {
     expect(validate.errors).not.toBeNull();
     expect(validate.errors!.some((e) => e.keyword === 'additionalProperties')).toBe(true);
   });
+
+  it('accepts transition_intent with opaque intent token', () => {
+    const withIntentToken = {
+      ...minimalValidDirectorProposal,
+      transition_intent: ['activate_second_sensor_cluster'],
+    };
+    expect(validate(withIntentToken)).toBe(true);
+    expect(validate.errors).toBeNull();
+  });
+
+  it('accepts empty transition_intent', () => {
+    const withEmptyIntentTokens = { ...minimalValidDirectorProposal, transition_intent: [] };
+    expect(validate(withEmptyIntentTokens)).toBe(true);
+    expect(validate.errors).toBeNull();
+  });
+
+  it('rejects transition_intent with structured new_state payload', () => {
+    const withStructuredPayload = {
+      ...minimalValidDirectorProposal,
+      transition_intent: [{ new_state: { entities: {}, locations: {} } }],
+    };
+    const valid = validate(withStructuredPayload);
+    expect(valid).toBe(false);
+    expect(validate.errors).not.toBeNull();
+    expect(validate.errors!.some(
+      (e) => e.keyword === 'type' && e.params?.type === 'string',
+    )).toBe(true);
+  });
+
+  it('rejects transition_intent with generic object payload', () => {
+    const withObjectPayload = {
+      ...minimalValidDirectorProposal,
+      transition_intent: [{}],
+    };
+    const valid = validate(withObjectPayload);
+    expect(valid).toBe(false);
+    expect(validate.errors).not.toBeNull();
+    expect(validate.errors!.some(
+      (e) => e.keyword === 'type' && e.params?.type === 'string',
+    )).toBe(true);
+  });
+
+  it('rejects transition_intent with empty string token', () => {
+    const withEmptyToken = {
+      ...minimalValidDirectorProposal,
+      transition_intent: [''],
+    };
+    const valid = validate(withEmptyToken);
+    expect(valid).toBe(false);
+    expect(validate.errors).not.toBeNull();
+    expect(validate.errors!.some((e) => e.keyword === 'minLength')).toBe(true);
+  });
 });
