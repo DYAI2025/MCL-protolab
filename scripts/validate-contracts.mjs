@@ -73,6 +73,20 @@ if (existsSync('schemas/state-transition.schema.json') && existsSync('transition
   }
 }
 
+// Every branch node document, if the branch-node schema is present.
+if (existsSync('schemas/branch-node.schema.json') && existsSync('branches')) {
+  for (const f of readdirSync('branches').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/branch-node.schema.json', join('branches', f)]);
+  }
+}
+
+// Every replay ref document, if the replay-ref schema is present.
+if (existsSync('schemas/replay-ref.schema.json') && existsSync('replays')) {
+  for (const f of readdirSync('replays').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/replay-ref.schema.json', join('replays', f)]);
+  }
+}
+
 let failed = 0;
 for (const [schemaPath, docPath] of pairs) {
   const validate = ajv.compile(read(schemaPath));

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "branch_id",
+    "parent_state_ref",
+    "event_ref",
+    "proposal_ref",
+    "selection_ref",
+    "transition_ref",
+    "source_refs",
+    "revision"
+  ],
+  "properties": {
+    "branch_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parent_state_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "proposal_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "selection_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "transition_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}
