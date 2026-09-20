@@ -158,6 +158,9 @@ describe('StateTransition schema', () => {
     const valid = validate(withUnknownOp);
     expect(valid).toBe(false);
     expect(validate.errors).not.toBeNull();
+    expect(validate.errors!.some(
+      (e) => e.keyword === 'const' && e.instancePath === '/operations/0/op',
+    )).toBe(true);
   });
 
   it('rejects generic arbitrary operation SET_ANYTHING', () => {
