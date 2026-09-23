@@ -11,8 +11,8 @@ import type { WorldEvent } from '../../src/core/generative-world/contracts.ts';
 import type { SelectionResult } from '../../src/core/generative-world/director-session.ts';
 import { createSoundNetwork, type AlertLevel, type NodeSpec, type SoundNetwork } from '../../src/core/sound-network/network.ts';
 import { mountDirectorPanel, type DirectorPanel } from './director/director-panel.ts';
-import { createZhalmDirector, ZHALM_FLAGS } from './director/zhalm-director.ts';
-import { createZhalmEventFactory, heardSensors } from './director/zhalm-events.ts';
+import { awaitingChoice, createZhalmDirector, ZHALM_FLAGS } from './director/zhalm-director.ts';
+import { createZhalmEventFactory, heardSensors, sensorsCrossingUp } from './director/zhalm-events.ts';
 import { CLUSTER_B_SPECS, NODE_SPECS } from './layout.ts';
 
 const SPAWN = new Vec3(0, 1.2, 30);
@@ -256,6 +256,7 @@ export function createZhalmForestExperiment(): Experiment {
       const flagIs = (flag: string): boolean => director.state().world_flags[flag] === true;
       let cycleEventIds: string[] = [];
       const cycleTriggered = new Set<string>();
+      let lastNoiseEventId: string | null = null;
       let lastLevel: AlertLevel = 'calm';
       let runOrigin: { x: number; z: number } | null = null;
       let investigateTarget: { x: number; z: number } | null = null;
@@ -277,22 +278,29 @@ export function createZhalmForestExperiment(): Experiment {
         const listening: Array<{ net: SoundNetwork; specs: readonly NodeSpec[] }> = [{ net: network, specs: NODE_SPECS }];
         if (flagIs(ZHALM_FLAGS.clusterB)) listening.push({ net: networkB, specs: CLUSTER_B_SPECS });
         const heard: string[] = [];
-        const triggered: string[] = [];
         for (const { net, specs } of listening) {
-          const ids = heardSensors(specs, x, z, radius);
-          const before = new Map(ids.map((id) => [id, net.nodeEnergy(id)]));
+          heard.push(...heardSensors(specs, x, z, radius));
           net.noiseAt(x, z, radius);
-          heard.push(...ids);
-          for (const id of ids) {
-            if ((before.get(id) ?? 0) < SENSOR_TRIGGER_ENERGY && net.nodeEnergy(id) >= SENSOR_TRIGGER_ENERGY) triggered.push(id);
-          }
         }
         if (heard.length === 0) return;
         const noise = worldEvents.noiseEmitted(x, z, radius, heard);
         record(noise);
-        for (const id of triggered) {
+        lastNoiseEventId = noise.event_id;
+      };
+
+      // Once per frame: every sensor whose energy crossed the trigger level —
+      // raised by noise or by a travelling network pulse — is SENSOR_TRIGGERED.
+      const CLUSTER_A_IDS = NODE_SPECS.map((spec) => spec.id);
+      const ALL_SENSOR_IDS = [...CLUSTER_A_IDS, ...CLUSTER_B_SPECS.map((spec) => spec.id)];
+      const sensorEnergy = new Map<string, number>();
+      const energyOf = (id: string): number => (CLUSTER_A_IDS.includes(id) ? network.nodeEnergy(id) : networkB.nodeEnergy(id));
+      const recordSensorCrossings = (listeningIds: readonly string[]): void => {
+        const crossed = sensorsCrossingUp(listeningIds, (id) => sensorEnergy.get(id) ?? 0, energyOf, SENSOR_TRIGGER_ENERGY);
+        for (const id of listeningIds) sensorEnergy.set(id, energyOf(id));
+        if (!lastNoiseEventId) return;
+        for (const id of crossed) {
           cycleTriggered.add(id);
-          record(worldEvents.sensorTriggered(id, noise.event_id));
+          record(worldEvents.sensorTriggered(id, lastNoiseEventId));
         }
       };
 
@@ -301,8 +309,9 @@ export function createZhalmForestExperiment(): Experiment {
         const eventIds = cycleEventIds;
         cycleEventIds = [];
         cycleTriggered.clear();
-        const open = director.activeRun();
-        if (pendingRun || (open && !open.resolved)) return; // proposals are already waiting for a human choice
+        // Only an offer a human can still choose from blocks the next run;
+        // failed, aborted or exhausted runs do not silence the director.
+        if (pendingRun || awaitingChoice(director.activeRun())) return;
         const controller = new AbortController();
         pendingRun = controller;
         panel?.showRunning();
@@ -392,6 +401,9 @@ export function createZhalmForestExperiment(): Experiment {
         const regrouping = flagIs(ZHALM_FLAGS.regrouping);
         if (clusterB.enabled !== clusterBActive) clusterB.enabled = clusterBActive;
         regroupPhase += dt;
+
+        // sensor triggers from noise or pulses, recorded before this frame's alert check
+        recordSensorCrossings(clusterBActive ? ALL_SENSOR_IDS : CLUSTER_A_IDS);
 
         // node glow follows network energy (write materials only on change);
         // a regrouping network pulses dimmed and in sync instead

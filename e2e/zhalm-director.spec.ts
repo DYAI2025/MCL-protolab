@@ -115,9 +115,15 @@ test('director slice: the regroup reaction pulls the guardian back towards the g
   await page.waitForFunction(() => (window as unknown as Win).__zhalm.director.flags()['zhalm.network.regrouping'] === true);
   await page.waitForFunction(() => (window as unknown as Win).__zhalm.director.guardianMode() === 'regrouping');
 
-  await page.waitForTimeout(3000);
-  const after = await page.evaluate(() => (window as unknown as Win).__zhalm.guardianPosition());
-  expect(Math.abs(after.z - heartZ), `guardian did not fall back: z ${before.z} -> ${after.z}`).toBeLessThan(Math.abs(before.z - heartZ) - 2);
+  // Poll instead of sleeping: SwiftShader frame rates vary, the direction must not.
+  await page.waitForFunction(
+    ([startDistance, target]) => {
+      const z = (window as unknown as Win).__zhalm.guardianPosition().z;
+      return Math.abs(z - (target as number)) < (startDistance as number) - 2;
+    },
+    [Math.abs(before.z - heartZ), heartZ],
+    { timeout: 20_000 },
+  );
 
   expect(errors, errors.join('\n')).toEqual([]);
 });

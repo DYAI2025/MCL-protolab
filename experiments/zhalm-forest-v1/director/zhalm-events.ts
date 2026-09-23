@@ -18,6 +18,19 @@ export function heardSensors(nodes: readonly NodeSpec[], x: number, z: number, r
   return nodes.filter((node) => Math.hypot(node.x - x, node.z - z) <= radius).map((node) => node.id);
 }
 
+/**
+ * Sensors whose energy crossed the threshold from below between two readings —
+ * whether the noise itself or a travelling network pulse raised it.
+ */
+export function sensorsCrossingUp(
+  ids: readonly string[],
+  before: (id: string) => number,
+  after: (id: string) => number,
+  threshold: number,
+): string[] {
+  return ids.filter((id) => before(id) < threshold && after(id) >= threshold);
+}
+
 export function createZhalmEventFactory(clock: () => string) {
   let sequence = 0;
 

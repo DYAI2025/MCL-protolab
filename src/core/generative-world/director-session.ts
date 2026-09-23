@@ -2,18 +2,18 @@ import type { CanonProjection, DirectorProposal, DirectorRunStatus, StateTransit
 import type { DirectorProvider, DirectorScope } from './director-context.ts';
 import { runDirector, type BoundaryRejection } from './director-orchestrator.ts';
 import type { AppendResult } from './event-ledger.ts';
-import { cloneJson, deepFreeze } from './json.ts';
-import { compileTransition, evaluateProposal, type GateResult, type PolicyScope } from './policy-gate.ts';
-import type { StateDiffEntry } from './transition-engine.ts';
+import { canonicalJson, cloneJson, deepFreeze } from './json.ts';
+import { compileTransition, evaluateProposal, redactPrivacyFindings, type GateResult, type PolicyScope } from './policy-gate.ts';
+import { applyTransition, type ReplayResult, type StateDiffEntry } from './transition-engine.ts';
 import { validateContract } from './validation.ts';
 import { createWorldSession } from './world-session.ts';
 
 /**
  * Director Session (MCL-85): observed events → director run → policy gate →
- * human selection → StateTransition. The only path from a proposal to the
- * world is select(), which requires an accepted gate result on an unchanged
- * world (69697537 D3/D6). `world` stays reachable for replay and tests; the
- * director path never bypasses the gate.
+ * human selection → StateTransition. select() is the only path from a
+ * proposal to the world: it needs an accepted gate result on the exact world
+ * the run was prepared on (69697537 D3/D6). The session exposes no write
+ * access to the world or the ledger.
  */
 
 export interface DirectorSessionConfig {
@@ -40,6 +40,9 @@ export interface RunView {
   readonly boundary_rejections: readonly BoundaryRejection[];
   readonly resolved: boolean;
   readonly selected_proposal_id: string | null;
+  readonly selection_ref: string | null;
+  /** True when a reset or a later-started run made this run obsolete before it completed; it never becomes active. */
+  readonly superseded: boolean;
 }
 
 export type SelectionRefusal =
@@ -51,10 +54,29 @@ export type SelectionRefusal =
   | 'TRANSITION_REJECTED';
 
 export type SelectionResult =
-  | { ok: true; proposal_id: string; transition: StateTransition; diff: readonly StateDiffEntry[]; state: WorldState }
+  | { ok: true; proposal_id: string; selection_ref: string; transition: StateTransition; diff: readonly StateDiffEntry[]; state: WorldState }
   | { ok: false; reason: SelectionRefusal; detail: string };
 
-type MutableRun = { -readonly [K in keyof RunView]: RunView[K] };
+type ActiveRun = { -readonly [K in keyof RunView]: RunView[K] } & {
+  /** Canonical JSON of the world the run was prepared on. */
+  fingerprint: string;
+  attempts: number;
+};
+
+const toView = (run: ActiveRun): RunView => deepFreeze(cloneJson({
+  run_id: run.run_id,
+  status: run.status,
+  stop_reason: run.stop_reason,
+  error: run.error,
+  revision_at_start: run.revision_at_start,
+  event_ids: run.event_ids,
+  proposals: run.proposals,
+  boundary_rejections: run.boundary_rejections,
+  resolved: run.resolved,
+  selected_proposal_id: run.selected_proposal_id,
+  selection_ref: run.selection_ref,
+  superseded: run.superseded,
+}));
 
 export function createDirectorSession(config: DirectorSessionConfig) {
   const canonValid = validateContract('CanonProjection', config.canon);
@@ -62,13 +84,20 @@ export function createDirectorSession(config: DirectorSessionConfig) {
 
   const world = createWorldSession(config.initial_state);
   let runCounter = 0;
-  let active: MutableRun | null = null;
+  let latestStarted = 0;
+  let epoch = 0;
+  let active: ActiveRun | null = null;
 
-  const refuse = (run: MutableRun, proposalId: string, reason: SelectionRefusal, detail: string): SelectionResult => {
+  const nextSelectionRef = (run: ActiveRun): string => {
+    run.attempts += 1;
+    return `${run.run_id}:selection-${run.attempts}`;
+  };
+
+  const refuse = (run: ActiveRun, proposalId: string, reason: SelectionRefusal, detail: string): SelectionResult => {
     world.ledger.appendSelection({
       run_id: run.run_id,
       proposal_id: proposalId,
-      selection_ref: `${run.run_id}:selection`,
+      selection_ref: nextSelectionRef(run),
       outcome: 'refused',
       reason,
     });
@@ -76,11 +105,19 @@ export function createDirectorSession(config: DirectorSessionConfig) {
   };
 
   return {
-    world,
-    ledger: world.ledger,
+    ledger: {
+      entries: () => world.ledger.entries(),
+      observed: () => world.ledger.observed(),
+      derived: () => world.ledger.derived(),
+      size: () => world.ledger.size(),
+    },
 
     state(): WorldState {
       return world.state();
+    },
+
+    replay(): ReplayResult {
+      return world.replay();
     },
 
     observe(event: unknown): AppendResult {
@@ -88,7 +125,7 @@ export function createDirectorSession(config: DirectorSessionConfig) {
     },
 
     activeRun(): RunView | null {
-      return active ? deepFreeze(cloneJson(active)) : null;
+      return active ? toView(active) : null;
     },
 
     async startRun(eventIds: readonly string[], signal?: AbortSignal): Promise<RunView> {
@@ -99,8 +136,12 @@ export function createDirectorSession(config: DirectorSessionConfig) {
         return event;
       });
       runCounter += 1;
+      const runNumber = runCounter;
+      latestStarted = runNumber;
+      const runEpoch = epoch;
       const stateAtStart = world.state();
-      const runId = `${stateAtStart.state_id}-run-${runCounter}`;
+      const runId = `${stateAtStart.state_id}-run-${runNumber}`;
+
       const outcome = await runDirector({
         run_id: runId,
         canon: config.canon,
@@ -110,14 +151,29 @@ export function createDirectorSession(config: DirectorSessionConfig) {
         provider: config.provider,
         ...(signal ? { signal } : {}),
       });
-      for (const doc of outcome.history) world.ledger.appendRunStatus(doc);
-      const proposals: ProposalView[] = outcome.proposals.map((proposal) => {
-        world.ledger.appendDerived(runId, proposal);
+
+      for (const doc of outcome.history) {
+        const recorded = world.ledger.appendRunStatus(doc);
+        if (!recorded.ok) throw new Error(`startRun: run status of ${runId} is not recordable — ${recorded.detail}`);
+      }
+      const boundaryRejections: BoundaryRejection[] = [...outcome.boundary_rejections];
+      const proposals: ProposalView[] = [];
+      outcome.proposals.forEach((proposal, index) => {
         const gate = evaluateProposal(proposal, { canon: config.canon, state: stateAtStart, scope: config.policy_scope });
-        world.ledger.appendGateResult(runId, gate);
-        return { proposal, gate };
+        // Blocked content is never persisted or shown: store the redacted copy (D12).
+        const leaks = gate.reasons.includes('PRIVACY_OR_SECRET_FIELD');
+        const storedProposal = leaks ? redactPrivacyFindings(proposal) : proposal;
+        const storedGate = leaks ? redactPrivacyFindings(gate) : gate;
+        const recorded = world.ledger.appendDerived(runId, storedProposal);
+        if (!recorded.ok) {
+          boundaryRejections.push({ index, errors: [`${recorded.reason}: ${recorded.detail}`] });
+          return;
+        }
+        world.ledger.appendGateResult(runId, storedGate);
+        proposals.push({ proposal: storedProposal, gate: storedGate });
       });
-      active = {
+
+      const run: ActiveRun = {
         run_id: runId,
         status: outcome.status,
         stop_reason: outcome.stop_reason,
@@ -125,11 +181,16 @@ export function createDirectorSession(config: DirectorSessionConfig) {
         revision_at_start: stateAtStart.revision,
         event_ids: [...eventIds],
         proposals,
-        boundary_rejections: outcome.boundary_rejections,
+        boundary_rejections: boundaryRejections,
         resolved: false,
         selected_proposal_id: null,
+        selection_ref: null,
+        superseded: runEpoch !== epoch || runNumber !== latestStarted,
+        fingerprint: canonicalJson(stateAtStart),
+        attempts: 0,
       };
-      return deepFreeze(cloneJson(active));
+      if (!run.superseded) active = run;
+      return toView(run);
     },
 
     select(proposalId: string): SelectionResult {
@@ -142,27 +203,28 @@ export function createDirectorSession(config: DirectorSessionConfig) {
         return refuse(run, proposalId, 'PROPOSAL_REJECTED', `policy gate rejected ${proposalId}: ${view.gate.reasons.join(', ')}`);
       }
       const current = world.state();
-      if (current.revision !== run.revision_at_start) {
-        return refuse(run, proposalId, 'STALE_RUN', `${run.run_id} was prepared on revision ${run.revision_at_start}, the world is at ${current.revision}`);
+      if (canonicalJson(current) !== run.fingerprint) {
+        return refuse(run, proposalId, 'STALE_RUN', `${run.run_id} was prepared on revision ${run.revision_at_start}; the world has changed since`);
       }
       const compiled = compileTransition(view.gate, view.proposal, current, `${run.run_id}:transition`);
       if (!compiled.ok) return refuse(run, proposalId, 'PROPOSAL_REJECTED', compiled.detail);
+      // The gate can accept what the engine refuses (e.g. a non-boolean flag):
+      // try the pure engine first so no accepted selection is recorded in vain.
+      const dryRun = applyTransition(current, compiled.transition);
+      if (!dryRun.ok) return refuse(run, proposalId, 'TRANSITION_REJECTED', `${dryRun.reason}: ${dryRun.detail}`);
 
-      world.ledger.appendSelection({
-        run_id: run.run_id,
-        proposal_id: proposalId,
-        selection_ref: `${run.run_id}:selection`,
-        outcome: 'accepted',
-        reason: null,
-      });
+      const selectionRef = nextSelectionRef(run);
+      world.ledger.appendSelection({ run_id: run.run_id, proposal_id: proposalId, selection_ref: selectionRef, outcome: 'accepted', reason: null });
       const applied = world.apply(compiled.transition);
-      if (!applied.ok) return { ok: false, reason: 'TRANSITION_REJECTED', detail: `${applied.reason}: ${applied.detail}` };
+      if (!applied.ok) throw new Error(`select: the engine rejected a transition its dry run accepted (${applied.reason})`);
       run.resolved = true;
       run.selected_proposal_id = proposalId;
-      return { ok: true, proposal_id: proposalId, transition: compiled.transition, diff: applied.diff, state: applied.state };
+      run.selection_ref = selectionRef;
+      return { ok: true, proposal_id: proposalId, selection_ref: selectionRef, transition: compiled.transition, diff: applied.diff, state: applied.state };
     },
 
     reset(): WorldState {
+      epoch += 1;
       active = null;
       return world.reset();
     },

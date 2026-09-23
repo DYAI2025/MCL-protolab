@@ -6,7 +6,7 @@ import retreatRegroup from '../../../proposals/zhalm-retreat-regroup.json';
 import zhalmInitialState from '../../../states/zhalm-forest-initial.json';
 import type { CanonProjection } from '../../../src/core/generative-world/contracts.ts';
 import type { DirectorScope } from '../../../src/core/generative-world/director-context.ts';
-import { createDirectorSession } from '../../../src/core/generative-world/director-session.ts';
+import { createDirectorSession, type RunView } from '../../../src/core/generative-world/director-session.ts';
 import { createFakeProvider } from '../../../src/core/generative-world/fake-provider.ts';
 import type { PolicyScope } from '../../../src/core/generative-world/policy-gate.ts';
 
@@ -59,3 +59,14 @@ export function createZhalmDirector() {
 }
 
 export type ZhalmDirector = ReturnType<typeof createZhalmDirector>;
+
+/**
+ * True only while a completed run offers at least one accepted, unresolved
+ * proposal. A failed, aborted or exhausted run must not block the next alert.
+ */
+export function awaitingChoice(run: RunView | null): boolean {
+  return run !== null
+    && run.status === 'STOPPED'
+    && !run.resolved
+    && run.proposals.some((view) => view.gate.status === 'accepted');
+}
