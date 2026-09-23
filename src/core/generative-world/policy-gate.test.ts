@@ -2,7 +2,16 @@ import { describe, expect, it } from 'vitest';
 import zhalmWorldState from '../../../states/zhalm-forest-initial.json';
 import type { CanonProjection, DirectorProposal, WorldState } from './contracts.ts';
 import { canonicalJson } from './json.ts';
-import { compileTransition, evaluateProposal, POLICY_GATE_VERSION, type GateReasonCode, type PolicyScope } from './policy-gate.ts';
+import {
+  compileTransition,
+  evaluateProposal,
+  GATE_REASON_CODES,
+  POLICY_GATE_VERSION,
+  REDACTION_MARKER,
+  redactPrivacyFindings,
+  type GateReasonCode,
+  type PolicyScope,
+} from './policy-gate.ts';
 import { applyTransition } from './transition-engine.ts';
 import { validateContract } from './validation.ts';
 
@@ -84,8 +93,12 @@ describe('ProposalPolicyGate', () => {
     expect(result.operations).toEqual([]);
   });
 
-  it('covers every reason code it can emit', () => {
-    expect(new Set(cases.map(([code]) => code)).size).toBe(15);
+  it('covers exactly the reason codes the gate declares', () => {
+    expect(new Set(cases.map(([code]) => code))).toEqual(new Set(GATE_REASON_CODES));
+  });
+
+  it('treats blank source refs as missing', () => {
+    expect(gate({ ...valid, source_refs: ['', '  '] }).reasons).toContain('SOURCE_REFS_MISSING');
   });
 
   it('blocks secret-like keys and values anywhere in the proposal', () => {
@@ -93,6 +106,38 @@ describe('ProposalPolicyGate', () => {
     expect(gate({ ...valid, summary: 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.e30.x' }).reasons).toContain('PRIVACY_OR_SECRET_FIELD');
     expect(gate({ ...valid, summary: 'Contact parent@example.org' }).reasons).toContain('PRIVACY_OR_SECRET_FIELD');
     expect(gate({ ...valid, rationale: '-----BEGIN RSA PRIVATE KEY-----' }).reasons).toContain('PRIVACY_OR_SECRET_FIELD');
+  });
+
+  it.each([
+    'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U',
+    'ghp_abcdefghijklmnopqrstuvwxyz0123456789',
+    'github_pat_11ABCDEFG0123456789_abcdefghijklmnopqrstuvwxyz',
+    'AKIAIOSFODNN7EXAMPLE',
+    'AIzaSyA-1234567890abcdefghijklmnopqrstuv',
+    'xoxb-1234567890-abcdefghij',
+    '-----BEGIN PGP PRIVATE KEY BLOCK-----',
+    'kontakt@müller-familie.de',
+  ])('blocks the token or address %s', (secret) => {
+    expect(gate({ ...valid, rationale: `See ${secret} for details.` }).reasons).toContain('PRIVACY_OR_SECRET_FIELD');
+  });
+
+  it.each([
+    'The bearer of the root-song walks the grove.',
+    'A torch-bearer walks past the sensors.',
+    'Bearer bonds are not part of this world.',
+  ])('does not flag ordinary prose: %s', (prose) => {
+    expect(gate({ ...valid, summary: prose }).status).toBe('accepted');
+  });
+
+  it('redacts privacy findings for storage and display while the verdict stays rejected', () => {
+    const leaking = { ...valid, summary: 'Contact parent@example.org', provider_trace: { api_key: 'sk-live-abcdefghijklmnopqrstuv' } };
+    expect(gate(leaking).status).toBe('rejected');
+    const redacted = redactPrivacyFindings(leaking);
+    expect(redacted.summary).toBe(REDACTION_MARKER);
+    expect(redacted.provider_trace).toEqual({ api_key: REDACTION_MARKER });
+    expect(canonicalJson(redacted)).not.toMatch(/parent@example\.org|sk-live/);
+    expect(validateContract('DirectorProposal', redacted)).toEqual({ ok: true });
+    expect(redactPrivacyFindings(valid)).toEqual(valid);
   });
 
   it('keeps an auditable trace: every rule once, in order, with its outcome', () => {

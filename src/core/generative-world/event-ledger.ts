@@ -72,6 +72,15 @@ export function createEventLedger() {
     return seq;
   };
 
+  /** Copies caller input before any id is registered; a lossy value is refused, not thrown. */
+  const representable = <T>(value: T): { ok: true; copy: T } | { ok: false; detail: string } => {
+    try {
+      return { ok: true, copy: cloneJson(value) };
+    } catch (error) {
+      return { ok: false, detail: `not representable as JSON: ${error instanceof Error ? error.message : String(error)}` };
+    }
+  };
+
   return {
     appendObserved(event: unknown, state: WorldState): AppendResult {
       const valid = validateContract('WorldEvent', event);
@@ -90,8 +99,10 @@ export function createEventLedger() {
       if (eventIds.has(observed.event_id)) {
         return { ok: false, reason: 'DUPLICATE_EVENT_ID', detail: `event_id "${observed.event_id}" is already recorded` };
       }
+      const copy = representable(observed);
+      if (!copy.ok) return { ok: false, reason: 'SCHEMA_INVALID', detail: copy.detail };
       eventIds.add(observed.event_id);
-      return { ok: true, seq: push({ kind: 'OBSERVED_EVENT', event: observed }) };
+      return { ok: true, seq: push({ kind: 'OBSERVED_EVENT', event: copy.copy }) };
     },
 
     appendDerived(runId: string, proposal: unknown): AppendResult {
@@ -101,8 +112,10 @@ export function createEventLedger() {
       if (proposalIds.has(derived.proposal_id)) {
         return { ok: false, reason: 'DUPLICATE_PROPOSAL_ID', detail: `proposal_id "${derived.proposal_id}" is already recorded` };
       }
+      const copy = representable(derived);
+      if (!copy.ok) return { ok: false, reason: 'SCHEMA_INVALID', detail: copy.detail };
       proposalIds.add(derived.proposal_id);
-      return { ok: true, seq: push({ kind: 'DERIVED_PROPOSAL', run_id: runId, proposal: derived }) };
+      return { ok: true, seq: push({ kind: 'DERIVED_PROPOSAL', run_id: runId, proposal: copy.copy }) };
     },
 
     appendTransitionApplied(transition: StateTransition, diff: readonly StateDiffEntry[], fromRevision: number, toRevision: number): number {

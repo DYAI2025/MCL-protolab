@@ -27,6 +27,17 @@ describe('canonicalJson', () => {
     expect(() => canonicalJson({ n: Number.NaN })).toThrow(/finite/);
     expect(() => canonicalJson({ f: () => 1 })).toThrow(/function/);
   });
+
+  it('throws on sparse arrays instead of emitting "[]" or invalid "[1,,3]"', () => {
+    expect(() => canonicalJson(new Array(1))).toThrow(/sparse/);
+    expect(() => canonicalJson([1, , 3])).toThrow(/sparse/);
+  });
+
+  it('throws on non-plain objects instead of serialising them as "{}"', () => {
+    expect(() => canonicalJson({ t: new Date(0) })).toThrow(/plain/);
+    expect(() => canonicalJson(new Map([['a', 1]]))).toThrow(/plain/);
+    expect(canonicalJson(Object.assign(Object.create(null) as object, { a: 1 }))).toBe('{"a":1}');
+  });
 });
 
 describe('cloneJson', () => {

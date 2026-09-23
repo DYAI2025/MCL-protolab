@@ -27,7 +27,9 @@ export type ContractName =
 
 export type ValidationResult = { ok: true } | { ok: false; errors: string[] };
 
-const ajv = new Ajv2020({ allErrors: true, strict: false });
+// strict: false keeps the contract gate's schema leniency; strictNumbers stays
+// on so NaN and ±Infinity never pass as JSON numbers.
+const ajv = new Ajv2020({ allErrors: true, strict: false, strictNumbers: true });
 
 const validators: Record<ContractName, ValidateFunction> = {
   CanonProjection: ajv.compile(canonProjectionSchema),
