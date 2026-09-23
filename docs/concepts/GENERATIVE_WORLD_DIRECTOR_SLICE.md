@@ -52,3 +52,25 @@ Rules the tests enforce:
 - Identical inputs give byte-identical outcomes.
 
 Donor note: the lifecycle follows the Infinite World run-state-machine *pattern* (Confluence 64815106 §2, §11). No donor code was copied.
+
+## Proposal Policy Gate (MCL-84)
+
+`policy-gate.ts` — `evaluateProposal` and `compileTransition`.
+
+Every rule is evaluated in a fixed order and written to the audit trace (`checks`, one entry per rule, outcome `passed | failed | skipped`). A proposal is `accepted` only when no rule failed. For a schema-invalid proposal the structural rules are `skipped` rather than guessed.
+
+| Rule | Reason codes |
+| --- | --- |
+| `schema` | `SCHEMA_INVALID` |
+| `privacy` | `PRIVACY_OR_SECRET_FIELD` — secret- or PII-like keys (api_key, token, password, authorization, email, child_name …) or values (Bearer tokens, `sk-…` keys, private-key blocks, `data:audio|image|video` URIs, e-mail addresses) anywhere in the proposal; blocked, never sanitised (D12) |
+| `kind` | `KIND_NOT_ALLOWED` |
+| `source_refs` | `SOURCE_REFS_MISSING` |
+| `required_facts` | `REQUIRED_FACT_MISSING` — every required fact must be a key of the canon projection's `facts` |
+| `canon_promotion` | `CANON_PROMOTION_FORBIDDEN` (`design_status: STATED`), `DESIGN_STATUS_INVALID` (anything but TENTATIVE, AMBIGUOUS, CONFLICT) (D11) |
+| `intents` | `UNKNOWN_INTENT`, `NOT_ACTIONABLE` — `transition_intent` tokens are opaque; only the experiment's intent catalog compiles them into operations (D3) |
+| `scope` | `SCOPE_VIOLATION` (flag outside the experiment's prefixes), `UNKNOWN_FLAG` |
+| `preconditions` | `PRECONDITION_UNSUPPORTED`, `PRECONDITION_FAILED`, `UNKNOWN_FLAG`, `UNKNOWN_ENTITY`, `UNKNOWN_LOCATION` — exactly the shapes `{flag_ref, equals}`, `{entity_ref}`, `{location_ref}` (D5) |
+
+`compileTransition` is the only bridge from a proposal to the transition engine: it refuses a rejected gate result (`GATE_NOT_ACCEPTED`) and a result that belongs to another proposal (`GATE_PROPOSAL_MISMATCH`). The compiled transition targets the state's `state_id`, references the proposal and carries its `source_refs`.
+
+Negative fixtures run through the FakeProvider and the orchestrator (`policy-gate-fixtures.test.ts`): hallucinated fact, unknown entity, unknown location, canon promotion, private-media payload, unknown intent and scope violation are each rejected with their reason code; the canon projection is a checked-in fixture, so no test needs a live Confluence read.
