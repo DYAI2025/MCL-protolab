@@ -33,3 +33,22 @@ Fixtures (validated by `npm run validate:contracts`):
 - `states/zhalm-forest-initial.json` — the Zhalm world: player, guardian, sensors `n0`–`n6` (cluster a) and `b0`–`b2` (cluster b), the grove heart, three locations and the three declared reaction flags, all `false`.
 - `world-events/zhalm-noise-emitted.json`, `zhalm-sensor-triggered.json`, `zhalm-network-alert.json` — the observed chain `NOISE_EMITTED → SENSOR_TRIGGERED → NETWORK_ALERT`.
 - `states/example-world-state.json` now declares `zhalm-network-alert-active`, so the MCL-81 example `ReplayRef` chain replays.
+
+## Director port (MCL-83)
+
+| Module | Responsibility |
+| --- | --- |
+| `director-context.ts` | `DirectorProvider` port, `DirectorScope`, `buildDirectorContext`, `DIRECTOR_CONTRACT_VERSION` |
+| `fake-provider.ts` | deterministic FakeProvider: proposal sets per event type, run-namespaced proposal ids; can simulate failure, malformed output and a pending provider |
+| `director-orchestrator.ts` | `runDirector`: lifecycle, abort, failure handling, provider-boundary validation |
+
+Rules the tests enforce:
+
+- The provider never sees the `WorldState`. The context carries only the canon facts the scope names, constraints, open points, the world flags, sorted entity and location ids, and events of the scoped types. Factions, relationships, quests, inventory, calendar and entity details stay out.
+- Lifecycle `CREATED → PREPARING → RUNNING → STOPPED | FAILED`; every step is recorded as a schema-valid `DirectorRun` document with an incrementing `revision`.
+- Abort before or during the run ends in `STOPPED` with `stop_reason: "aborted"` and no proposals. A provider error, invalid canon/state/event input, or output that is not an array ends in `FAILED`. The world state is never touched — the orchestrator only reads.
+- The orchestrator stamps `provider_trace` (`provider_id`, `model_or_fixture`, `prompt_or_contract_version`, `run_id`), overwriting whatever the provider claimed (D9).
+- Only schema-valid proposals with unique ids leave the boundary; everything else is reported in `boundary_rejections` with its index and errors.
+- Identical inputs give byte-identical outcomes.
+
+Donor note: the lifecycle follows the Infinite World run-state-machine *pattern* (Confluence 64815106 §2, §11). No donor code was copied.
