@@ -34,7 +34,7 @@ An unexecuted gate is `not_run`, never `passed`. Every gate below was also seen 
 
 ## Generative World Director slice — MCL-81 … MCL-85
 
-Sprint "MCL Protolab S1 – Director" (Jira 777). Local run 2026-09-23 (macOS arm64, Node 24.19.0) on `feat/mcl-85-zhalm-director-slice@029c951`, the implementation head after the review round. It is stacked on MCL-84 `d15eed5`, MCL-83 `fe567e2`, MCL-82 `e53906b` and MCL-81 `4a6066d`; the story branches carry the review fixes and are merged upward without force-push. CI evidence for each story head: the `gates` and `deployment-container` checks of PRs #5–#9.
+Sprint "MCL Protolab S1 – Director" (Jira 777). Local run 2026-09-23 (macOS arm64, Node 24.19.0) on `feat/mcl-85-zhalm-director-slice@029c951`, the implementation head after the review round. It is stacked on MCL-84 `d15eed5`, MCL-83 `38ef43c`, MCL-82 `e53906b` and MCL-81 `4a6066d`; the story branches carry the review fixes and are merged upward without force-push. CI evidence for each story head: the `gates` and `deployment-container` checks of PRs #5–#9.
 
 | Gate | Command | Raw result | Status |
 |---|---|---|---|
