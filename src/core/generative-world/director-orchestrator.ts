@@ -47,27 +47,48 @@ const ABORTED = Symbol('director-run-aborted');
 
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
-const abortionOf = (signal: AbortSignal): Promise<never> => new Promise((_, reject) => {
-  if (signal.aborted) {
-    reject(ABORTED);
-    return;
-  }
-  signal.addEventListener('abort', () => reject(ABORTED), { once: true });
-});
+/** A promise that rejects on abort, plus a dispose() that removes its listener again. */
+const abortionOf = (signal: AbortSignal): { promise: Promise<never>; dispose: () => void } => {
+  const holder: { listener: (() => void) | null } = { listener: null };
+  const promise = new Promise<never>((_, reject) => {
+    if (signal.aborted) {
+      reject(ABORTED);
+      return;
+    }
+    holder.listener = () => reject(ABORTED);
+    signal.addEventListener('abort', holder.listener, { once: true });
+  });
+  return {
+    promise,
+    dispose: () => {
+      if (holder.listener) signal.removeEventListener('abort', holder.listener);
+      holder.listener = null;
+    },
+  };
+};
 
 export async function runDirector(input: DirectorRunInput): Promise<DirectorRunOutcome> {
   const signal = input.signal ?? new AbortController().signal;
   const history: DirectorRun[] = [];
   let last: DirectorRun | null = null;
 
+  // Structurally broken input must still produce schema-valid run documents
+  // and end in FAILED — reading refs defensively keeps record() from throwing.
+  const canonRef = typeof input.canon?.projection_id === 'string' && input.canon.projection_id !== '' ? input.canon.projection_id : 'invalid-canon-projection';
+  const stateRef = typeof input.state?.state_id === 'string' && input.state.state_id !== '' ? input.state.state_id : 'invalid-world-state';
+  const eventRefs = Array.isArray(input.events)
+    ? input.events.map((event) => (typeof event?.event_id === 'string' && event.event_id !== '' ? event.event_id : 'invalid-event'))
+    : [];
+  const sourceRefs = Array.isArray(input.canon?.source_refs) ? input.canon.source_refs.filter((ref) => typeof ref === 'string') : [];
+
   const record = (status: DirectorRunStatus): DirectorRun => {
     last = {
       run_id: input.run_id,
-      canon_projection_ref: input.canon.projection_id,
-      world_state_ref: input.state.state_id,
-      event_refs: input.events.map((event) => event.event_id),
+      canon_projection_ref: canonRef,
+      world_state_ref: stateRef,
+      event_refs: [...eventRefs],
       status,
-      source_refs: [...input.canon.source_refs],
+      source_refs: [...sourceRefs],
       revision: history.length + 1,
     };
     history.push(last);
@@ -93,6 +114,7 @@ export async function runDirector(input: DirectorRunInput): Promise<DirectorRunO
   if (!canonValid.ok) return failed(`CanonProjection invalid: ${canonValid.errors.join('; ')}`, null);
   const stateValid = validateContract('WorldState', input.state);
   if (!stateValid.ok) return failed(`WorldState invalid: ${stateValid.errors.join('; ')}`, null);
+  if (!Array.isArray(input.events)) return failed('WorldEvent list invalid: events must be an array', null);
   for (const event of input.events) {
     const eventValid = validateContract('WorldEvent', event);
     if (!eventValid.ok) return failed(`WorldEvent invalid: ${eventValid.errors.join('; ')}`, null);
@@ -102,11 +124,14 @@ export async function runDirector(input: DirectorRunInput): Promise<DirectorRunO
 
   record('RUNNING');
   let raw: unknown;
+  const abortion = abortionOf(signal);
   try {
-    raw = await Promise.race([input.provider.propose(context, signal), abortionOf(signal)]);
+    raw = await Promise.race([input.provider.propose(context, signal), abortion.promise]);
   } catch (error) {
     if (error === ABORTED || signal.aborted) return stopped(context);
     return failed(`PROVIDER_ERROR: ${messageOf(error)}`, context);
+  } finally {
+    abortion.dispose();
   }
   if (signal.aborted) return stopped(context);
   if (!Array.isArray(raw)) return failed('PROVIDER_OUTPUT_NOT_A_LIST: the provider must answer with an array of proposals', context);

@@ -121,6 +121,33 @@ describe('runDirector lifecycle', () => {
     expect(outcome.error).toMatch(/CanonProjection/);
   });
 
+  it('returns FAILED instead of rejecting when inputs are structurally broken', async () => {
+    const outcome = await runDirector({
+      run_id: 'run-broken',
+      canon: null as unknown as CanonProjection,
+      state: null as unknown as WorldState,
+      events: 'not-a-list' as unknown as WorldEvent[],
+      scope,
+      provider: createFakeProvider(fixture),
+    });
+    expect(outcome.history.map((doc) => doc.status)).toEqual(['CREATED', 'PREPARING', 'FAILED']);
+    for (const doc of outcome.history) expect(validateContract('DirectorRun', doc)).toEqual({ ok: true });
+    expect(outcome.error).toMatch(/CanonProjection/);
+  });
+
+  it('removes its abort listener when the provider settles first, so a reused signal does not accumulate listeners', async () => {
+    const controller = new AbortController();
+    let added = 0;
+    let removed = 0;
+    const add = controller.signal.addEventListener.bind(controller.signal);
+    const remove = controller.signal.removeEventListener.bind(controller.signal);
+    controller.signal.addEventListener = ((...args: Parameters<AbortSignal['addEventListener']>) => { added += 1; add(...args); }) as AbortSignal['addEventListener'];
+    controller.signal.removeEventListener = ((...args: Parameters<AbortSignal['removeEventListener']>) => { removed += 1; remove(...args); }) as AbortSignal['removeEventListener'];
+    for (const runId of ['run-a', 'run-b', 'run-c']) await run(createFakeProvider(fixture), controller.signal, runId);
+    expect(added).toBe(3);
+    expect(removed).toBe(3);
+  });
+
   it('is deterministic: identical inputs give identical outcomes', async () => {
     const first = await run(createFakeProvider(fixture));
     const second = await run(createFakeProvider(fixture));
