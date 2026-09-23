@@ -32,9 +32,29 @@ An unexecuted gate is `not_run`, never `passed`. Every gate below was also seen 
 - **e2e:preview**: initially red because the preview Playwright configuration did not exist; after implementation the local run reached the browser launch and stopped on the missing Chromium binary. CI installs Chromium before executing the preserved gate.
 - **deployment container**: the smoke gate exits 127 locally when Docker is unavailable instead of reporting a false pass. Its first Docker-capable CI run failed with `unable to find user caddy`, proving the non-root start assertion caught an invalid image assumption; the runtime now creates an explicit unprivileged `mcl` user. The next run exposed a readiness race between HTTP startup and Docker's first scheduled health probe; the smoke now waits for and diagnoses both states independently.
 
+## Generative World Director slice — MCL-81 … MCL-85
+
+Sprint "MCL Protolab S1 – Director" (Jira 777). Local run 2026-09-23 (macOS arm64, Node 24.19.0) on `feat/mcl-85-zhalm-director-slice@ff8a8e7`, the implementation head stacked on MCL-84 `0b616a1`, MCL-83 `99a5cc5`, MCL-82 `74ab31f` and MCL-81 `4a6066d`. CI evidence for each story head: the `gates` and `deployment-container` checks of PRs #5–#9.
+
+| Gate | Command | Raw result | Status |
+|---|---|---|---|
+| Types | `npm run typecheck` | exit 0 | PASS |
+| Lint | `npm run lint` | exit 0 | PASS |
+| Import boundaries | `npm run boundaries` | `✔ no dependency violations found (118 modules, 321 dependencies cruised)` | PASS |
+| Contracts | `npm run validate:contracts` | `31/31 documents valid` | PASS |
+| Unit + integration | `npm test` | `Tests  320 passed (320)`, 31 files | PASS |
+| Build | `npm run build` | exit 0; bundle 1,646.36 kB (gzip 434.55 kB) — +49.4 kB gzip against 1,483.67 kB / 385.18 kB before the director (AJV at runtime + slice) | PASS |
+| Asset determinism | `npm run generate:assets` + `git diff --exit-code` | empty diff | PASS |
+| Browser smoke | `npm run e2e` | `9 passed (2.6m)` — the seven existing specs plus two director specs | PASS |
+| Preview | `npm run e2e:preview` | `1 passed` | PASS |
+| Human Play/Design Review | MCL-91, by hand | not executed — no automated test substitutes | not_run |
+
+Red before green: every new unit/integration test file was first run red (module missing). The director e2e first failed on the missing hook (`2 failed`, TimeoutError). The core dependency guard was canaried with a planted `openai` import and a clock call (`2 failed`). During implementation the e2e exposed an ambiguous selector (two proposals share an intent; only the accepted one may be clicked) and a frame race (runtime state read before the next update); the spec now scopes to accepted proposals and waits for runtime state.
+
 ## Evidence artifacts
 
 - `artifacts/screens/playground.png` — playground with player, crates, landmarks, inspector.
+- `artifacts/screens/zhalm-director.png` — director slice after a human choice: 3/4 proposals accepted, the Druhen demonstration blocked, applied diff `zhalm.cluster-b.active false → true · revision 1 → 2`, cluster b visible on the entry route.
 - `artifacts/screens/creature-gallery.png` — all four concepts with FX states active (mugosh `hostile`, flammenwolf `prowling` + burn trail, veras `drifting`, zhalm `pulse`).
 - `docs/architecture/DECISION-2026-08-29-playcanvas-risk-gate.md` — walking-skeleton go/no-go outcome.
 - `docs/plans/2026-08-30-world-editor-vps-test-instance.md` — requirements, plan-fidelity review and deployment blocker.
