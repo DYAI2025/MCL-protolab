@@ -55,6 +55,17 @@ describe('event & evidence ledger', () => {
     expect(ledger.entries()).toHaveLength(0);
   });
 
+  it('refuses schema-valid input that is not representable as JSON without throwing or burning the id', () => {
+    const ledger = createEventLedger();
+    const lossy = { ...noiseEmitted, payload: { x: Number.NaN } };
+    expect(ledger.appendObserved(lossy, state)).toMatchObject({ ok: false, reason: 'SCHEMA_INVALID' });
+    expect(ledger.appendObserved(noiseEmitted, state)).toEqual({ ok: true, seq: 1 });
+
+    const lossyProposal = { ...exampleProposal, provider_trace: { note: undefined } };
+    expect(ledger.appendDerived('run-1', lossyProposal)).toMatchObject({ ok: false, reason: 'SCHEMA_INVALID' });
+    expect(ledger.appendDerived('run-1', exampleProposal)).toEqual({ ok: true, seq: 2 });
+  });
+
   it('rejects a second event with the same event_id', () => {
     const ledger = createEventLedger();
     ledger.appendObserved(noiseEmitted, state);

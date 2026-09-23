@@ -49,6 +49,11 @@ describe('validateContract', () => {
     expect(result.ok).toBe(false);
   });
 
+  it('rejects NaN and Infinity for numeric contract fields', () => {
+    expect(validateContract('WorldState', { ...zhalmWorldState, revision: Infinity }).ok).toBe(false);
+    expect(validateContract('DirectorProposal', { ...exampleDirectorProposal, confidence: Number.NaN }).ok).toBe(false);
+  });
+
   it('rejects non-objects without throwing', () => {
     expect(validateContract('WorldEvent', null).ok).toBe(false);
     expect(validateContract('WorldEvent', 'NETWORK_ALERT').ok).toBe(false);
