@@ -1,0 +1,10 @@
+{
+  "event_id": "zhalm-network-alert-002",
+  "event_type": "NETWORK_ALERT",
+  "timestamp": "2026-09-23T17:00:00.500Z",
+  "actor_refs": ["zhalm-sensor-n3"],
+  "location_ref": "zhalm-forest",
+  "payload": { "level": "alerted", "origin": { "x": 0, "z": 0 } },
+  "source_refs": ["MLOA:32735234#Zhalm-Druhen"],
+  "evidence_class": "observed_gameplay"
+}

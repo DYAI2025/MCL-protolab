@@ -6,7 +6,9 @@
   "relationships": {},
   "quests": {},
   "inventory": {},
-  "world_flags": {},
+  "world_flags": {
+    "zhalm-network-alert-active": false
+  },
   "calendar": {},
   "active_events": [],
   "source_refs": ["MLOA:64815106"],

@@ -1,0 +1,36 @@
+{
+  "state_id": "zhalm-forest-v1",
+  "entities": {
+    "player": { "kind": "player" },
+    "zhalm-guardian": { "kind": "creature", "concept_ref": "zhalm", "home_location_ref": "zhalm-forest.den" },
+    "zhalm-sensor-n0": { "kind": "sensor", "cluster": "a" },
+    "zhalm-sensor-n1": { "kind": "sensor", "cluster": "a" },
+    "zhalm-sensor-n2": { "kind": "sensor", "cluster": "a" },
+    "zhalm-sensor-n3": { "kind": "sensor", "cluster": "a" },
+    "zhalm-sensor-n4": { "kind": "sensor", "cluster": "a" },
+    "zhalm-sensor-n5": { "kind": "sensor", "cluster": "a" },
+    "zhalm-sensor-n6": { "kind": "sensor", "cluster": "a" },
+    "zhalm-sensor-b0": { "kind": "sensor", "cluster": "b" },
+    "zhalm-sensor-b1": { "kind": "sensor", "cluster": "b" },
+    "zhalm-sensor-b2": { "kind": "sensor", "cluster": "b" },
+    "grove-heart": { "kind": "objective" }
+  },
+  "locations": {
+    "zhalm-forest": { "kind": "region" },
+    "zhalm-forest.den": { "kind": "area" },
+    "zhalm-forest.heart": { "kind": "area" }
+  },
+  "factions": {},
+  "relationships": {},
+  "quests": {},
+  "inventory": {},
+  "world_flags": {
+    "zhalm.guardian.investigating": false,
+    "zhalm.cluster-b.active": false,
+    "zhalm.network.regrouping": false
+  },
+  "calendar": {},
+  "active_events": [],
+  "source_refs": ["MLOA:32735234#Zhalm-Druhen", "MLOA:20250626", "MLOA:64815106"],
+  "revision": 1
+}
