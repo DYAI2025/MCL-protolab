@@ -1,5 +1,6 @@
-import type { DirectorProposal, StateTransition, WorldEvent, WorldState } from './contracts.ts';
+import type { DirectorProposal, DirectorRun, StateTransition, WorldEvent, WorldState } from './contracts.ts';
 import { cloneJson, deepFreeze } from './json.ts';
+import type { GateResult } from './policy-gate.ts';
 import type { StateDiffEntry, TransitionRejectionReason } from './transition-engine.ts';
 import { validateContract } from './validation.ts';
 
@@ -32,7 +33,20 @@ export type LedgerEntry =
     readonly reason: TransitionRejectionReason;
     readonly detail: string;
   }
-  | { readonly seq: number; readonly kind: 'RESET'; readonly to_revision: number };
+  | { readonly seq: number; readonly kind: 'RESET'; readonly to_revision: number }
+  | { readonly seq: number; readonly kind: 'RUN_STATUS'; readonly run: DirectorRun }
+  | { readonly seq: number; readonly kind: 'GATE_RESULT'; readonly run_id: string; readonly gate: GateResult }
+  | {
+    readonly seq: number;
+    readonly kind: 'SELECTION';
+    readonly run_id: string;
+    readonly proposal_id: string;
+    readonly selection_ref: string;
+    readonly outcome: 'accepted' | 'refused';
+    readonly reason: string | null;
+  };
+
+export type SelectionRecord = Omit<Extract<LedgerEntry, { kind: 'SELECTION' }>, 'seq' | 'kind'>;
 
 export type LedgerRejectionReason =
   | 'SCHEMA_INVALID'
@@ -101,6 +115,20 @@ export function createEventLedger() {
 
     appendReset(toRevision: number): number {
       return push({ kind: 'RESET', to_revision: toRevision });
+    },
+
+    appendRunStatus(run: unknown): AppendResult {
+      const valid = validateContract('DirectorRun', run);
+      if (!valid.ok) return { ok: false, reason: 'SCHEMA_INVALID', detail: valid.errors.join('; ') };
+      return { ok: true, seq: push({ kind: 'RUN_STATUS', run: run as DirectorRun }) };
+    },
+
+    appendGateResult(runId: string, gate: GateResult): number {
+      return push({ kind: 'GATE_RESULT', run_id: runId, gate });
+    },
+
+    appendSelection(selection: SelectionRecord): number {
+      return push({ kind: 'SELECTION', ...selection });
     },
 
     entries(): readonly LedgerEntry[] {
