@@ -19,7 +19,18 @@ export function canonicalJson(value: unknown): string {
     case 'undefined':
       throw new TypeError('canonicalJson: undefined is not representable in JSON');
     case 'object': {
-      if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item)).join(',')}]`;
+      if (Array.isArray(value)) {
+        const items: string[] = [];
+        for (let index = 0; index < value.length; index += 1) {
+          if (!(index in value)) throw new TypeError(`canonicalJson: sparse arrays are not representable in JSON (hole at ${index})`);
+          items.push(canonicalJson(value[index]));
+        }
+        return `[${items.join(',')}]`;
+      }
+      const prototype: unknown = Object.getPrototypeOf(value);
+      if (prototype !== Object.prototype && prototype !== null) {
+        throw new TypeError(`canonicalJson: only plain objects are representable in JSON (got ${String((value as object).constructor?.name ?? 'object')})`);
+      }
       const record = value as Record<string, unknown>;
       const keys = Object.keys(record).sort();
       return `{${keys.map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`).join(',')}}`;

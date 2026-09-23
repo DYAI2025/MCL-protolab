@@ -28,8 +28,17 @@ describe('generative-world core boundary', () => {
     }
   });
 
-  it('uses no network, clock or randomness APIs', () => {
-    const forbidden = /\b(fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon)\b|Date\.now|new Date\(|Math\.random|performance\.now/;
+  it('uses no network, clock, randomness or dynamic loading APIs', () => {
+    const forbidden = new RegExp([
+      String.raw`\b(fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon)\b`,
+      String.raw`\bDate\s*(\(|\.now)`,
+      String.raw`new\s+Date\b`,
+      String.raw`Math\.random`,
+      String.raw`performance\.now`,
+      String.raw`crypto\.(randomUUID|getRandomValues)`,
+      String.raw`\bimport\s*\(`,
+      String.raw`\brequire\s*\(`,
+    ].join('|'));
     for (const file of sources) {
       expect(readFileSync(join(DIR, file), 'utf8'), file).not.toMatch(forbidden);
     }
