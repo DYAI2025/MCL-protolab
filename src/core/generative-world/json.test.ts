@@ -30,7 +30,6 @@ describe('canonicalJson', () => {
 
   it('throws on sparse arrays instead of emitting "[]" or invalid "[1,,3]"', () => {
     expect(() => canonicalJson(new Array(1))).toThrow(/sparse/);
-    // eslint-disable-next-line no-sparse-arrays
     expect(() => canonicalJson([1, , 3])).toThrow(/sparse/);
   });
 
