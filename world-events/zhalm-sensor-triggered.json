@@ -1,0 +1,10 @@
+{
+  "event_id": "zhalm-sensor-triggered-001",
+  "event_type": "SENSOR_TRIGGERED",
+  "timestamp": "2026-09-23T17:00:00.000Z",
+  "actor_refs": ["zhalm-sensor-n3"],
+  "location_ref": "zhalm-forest",
+  "payload": { "cause_event_ref": "zhalm-noise-emitted-001" },
+  "source_refs": ["MLOA:32735234#Zhalm-Druhen"],
+  "evidence_class": "observed_gameplay"
+}

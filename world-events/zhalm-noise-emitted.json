@@ -1,0 +1,10 @@
+{
+  "event_id": "zhalm-noise-emitted-001",
+  "event_type": "NOISE_EMITTED",
+  "timestamp": "2026-09-23T17:00:00.000Z",
+  "actor_refs": ["player"],
+  "location_ref": "zhalm-forest",
+  "payload": { "x": 0, "z": 0, "radius": 6, "heard_by": ["zhalm-sensor-n3"] },
+  "source_refs": ["MLOA:32735234#Zhalm-Druhen"],
+  "evidence_class": "observed_gameplay"
+}
