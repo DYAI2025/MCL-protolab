@@ -7,22 +7,25 @@ import { createPostChain } from '../../src/runtime/fx/post.ts';
 import { emissiveMaterial, translucentMaterial } from '../../src/runtime/fx/emissive.ts';
 import { addParticles } from '../../src/runtime/fx/particles.ts';
 import type { SceneContext } from '../../src/runtime/scene-context.ts';
-import { createSoundNetwork, type SoundNetwork } from '../../src/core/sound-network/network.ts';
+import type { WorldEvent } from '../../src/core/generative-world/contracts.ts';
+import type { SelectionResult } from '../../src/core/generative-world/director-session.ts';
+import { createSoundNetwork, type AlertLevel, type NodeSpec, type SoundNetwork } from '../../src/core/sound-network/network.ts';
+import { mountDirectorPanel, type DirectorPanel } from './director/director-panel.ts';
+import { createZhalmDirector, ZHALM_FLAGS } from './director/zhalm-director.ts';
+import { createZhalmEventFactory, heardSensors } from './director/zhalm-events.ts';
+import { CLUSTER_B_SPECS, NODE_SPECS } from './layout.ts';
 
 const SPAWN = new Vec3(0, 1.2, 30);
 const HEART_POSITION = new Vec3(0, 1.1, -32);
 const DEN_POSITION = new Vec3(0, 0, -12);
 
-// Sensor positions form two flankable routes between spawn and the heart.
-const NODE_SPECS = [
-  { id: 'n0', x: -8, z: 12 },
-  { id: 'n1', x: 8, z: 8 },
-  { id: 'n2', x: -14, z: -2 },
-  { id: 'n3', x: 0, z: 0 },
-  { id: 'n4', x: 14, z: -4 },
-  { id: 'n5', x: -8, z: -16 },
-  { id: 'n6', x: 9, z: -18 },
-];
+// Director slice (MCL-85). A sensor "triggers" when its energy crosses this from below.
+const SENSOR_TRIGGER_ENERGY = 0.5;
+const REGROUP_POSITION = { x: 0, z: -29 }; // in front of the grove heart
+const INVESTIGATE_COLOR = new Color(1.0, 0.6, 0.15);
+const REGROUP_COLOR = new Color(0.3, 0.1, 0.9);
+const LEVEL_RANK: Record<AlertLevel, number> = { calm: 0, suspicious: 1, alerted: 2 };
+const higherLevel = (a: AlertLevel, b: AlertLevel): AlertLevel => (LEVEL_RANK[b] > LEVEL_RANK[a] ? b : a);
 
 const NODE_BASE = 0.35;
 const NODE_PEAK = 5;
@@ -46,6 +49,8 @@ export function createZhalmForestExperiment(): Experiment {
   let onUpdate: ((dt: number) => void) | null = null;
   let chip: HTMLElement | null = null;
   let post: CameraFrame | null = null;
+  let panel: DirectorPanel | null = null;
+  let pendingRun: AbortController | null = null;
 
   return {
     id: 'zhalm-forest-v1',
@@ -128,22 +133,37 @@ export function createZhalmForestExperiment(): Experiment {
         energyDecayPerSecond: 0.8,
       });
 
+      // Cluster b listens only after the director's "second sensor cluster" reaction.
+      const networkB: SoundNetwork = createSoundNetwork(CLUSTER_B_SPECS, {
+        linkRange: tunables.get('zhalm.linkRange'),
+        pulseSpeed: tunables.get('zhalm.pulseSpeed'),
+        suspicionThreshold: 0.5,
+        alertThreshold: 1.6,
+        decayPerSecond: tunables.get('zhalm.alertDecay'),
+        energyDecayPerSecond: 0.8,
+      });
+
       const nodeVisuals = new Map<string, { material: StandardMaterial; shown: number }>();
       const rootMaterial = matte(0.13, 0.1, 0.16);
-      for (const spec of NODE_SPECS) {
+      const clusterB = new Entity('zhalm-cluster-b');
+      clusterB.enabled = false;
+      root.addChild(clusterB);
+      const addSensor = (spec: NodeSpec, parent: Entity): void => {
         const socket = new Entity(`socket-${spec.id}`);
         socket.setLocalScale(1.1, 0.5, 1.1);
         socket.setPosition(spec.x, 0.25, spec.z);
         socket.addComponent('render', { type: 'cone', material: rootMaterial });
-        root.addChild(socket);
+        parent.addChild(socket);
         const material = emissiveMaterial(PULSE_COLOR, NODE_BASE);
         const orb = new Entity(`node-${spec.id}`);
         orb.setLocalScale(0.55, 0.55, 0.55);
         orb.setPosition(spec.x, 0.85, spec.z);
         orb.addComponent('render', { type: 'sphere', material });
-        root.addChild(orb);
+        parent.addChild(orb);
         nodeVisuals.set(spec.id, { material, shown: NODE_BASE });
-      }
+      };
+      for (const spec of NODE_SPECS) addSensor(spec, root);
+      for (const spec of CLUSTER_B_SPECS) addSensor(spec, clusterB);
 
       // --- guardian ------------------------------------------------------
       const guardian = new Entity('guardian');
@@ -227,6 +247,92 @@ export function createZhalmForestExperiment(): Experiment {
         host.append(chip);
       }
 
+      // --- generative world director (MCL-85) ----------------------------
+      // Sound-network signals become observed WorldEvents; a NETWORK_ALERT
+      // starts a FakeProvider run; the policy gate decides what is selectable;
+      // a human choice changes world flags, and the forest reacts to the flags.
+      const director = createZhalmDirector();
+      const worldEvents = createZhalmEventFactory(() => new Date().toISOString());
+      const flagIs = (flag: string): boolean => director.state().world_flags[flag] === true;
+      let cycleEventIds: string[] = [];
+      const cycleTriggered = new Set<string>();
+      let lastLevel: AlertLevel = 'calm';
+      let runOrigin: { x: number; z: number } | null = null;
+      let investigateTarget: { x: number; z: number } | null = null;
+      let searchPhase = 0;
+      let regroupPhase = 0;
+      let guardianMode = 'calm';
+
+      const record = (event: WorldEvent): void => {
+        const result = director.observe(event);
+        if (!result.ok) {
+          // A bridge bug must be loud: the e2e suite fails on console errors.
+          console.error(`[zhalm director] event rejected: ${result.reason} — ${result.detail}`);
+          return;
+        }
+        cycleEventIds = [...cycleEventIds, event.event_id].slice(-12);
+      };
+
+      const emitNoise = (x: number, z: number, radius: number): void => {
+        const listening: Array<{ net: SoundNetwork; specs: readonly NodeSpec[] }> = [{ net: network, specs: NODE_SPECS }];
+        if (flagIs(ZHALM_FLAGS.clusterB)) listening.push({ net: networkB, specs: CLUSTER_B_SPECS });
+        const heard: string[] = [];
+        const triggered: string[] = [];
+        for (const { net, specs } of listening) {
+          const ids = heardSensors(specs, x, z, radius);
+          const before = new Map(ids.map((id) => [id, net.nodeEnergy(id)]));
+          net.noiseAt(x, z, radius);
+          heard.push(...ids);
+          for (const id of ids) {
+            if ((before.get(id) ?? 0) < SENSOR_TRIGGER_ENERGY && net.nodeEnergy(id) >= SENSOR_TRIGGER_ENERGY) triggered.push(id);
+          }
+        }
+        if (heard.length === 0) return;
+        const noise = worldEvents.noiseEmitted(x, z, radius, heard);
+        record(noise);
+        for (const id of triggered) {
+          cycleTriggered.add(id);
+          record(worldEvents.sensorTriggered(id, noise.event_id));
+        }
+      };
+
+      const onNetworkAlert = (origin: { x: number; z: number }): void => {
+        record(worldEvents.networkAlert('alerted', origin, [...cycleTriggered]));
+        const eventIds = cycleEventIds;
+        cycleEventIds = [];
+        cycleTriggered.clear();
+        const open = director.activeRun();
+        if (pendingRun || (open && !open.resolved)) return; // proposals are already waiting for a human choice
+        const controller = new AbortController();
+        pendingRun = controller;
+        panel?.showRunning();
+        director.startRun(eventIds, controller.signal).then((run) => {
+          if (pendingRun !== controller) return; // reset or destroyed meanwhile
+          pendingRun = null;
+          runOrigin = origin;
+          panel?.showRun(run);
+        }).catch((error: unknown) => {
+          if (pendingRun === controller) pendingRun = null;
+          console.error('[zhalm director] run failed', error);
+        });
+      };
+
+      const selectProposal = (proposalId: string): SelectionResult => {
+        const result = director.select(proposalId);
+        if (result.ok && result.transition.operations.some((operation) => operation.flag_ref === ZHALM_FLAGS.investigating)) {
+          investigateTarget = runOrigin;
+        }
+        panel?.showResult(result);
+        const run = director.activeRun();
+        if (run) panel?.showRun(run);
+        return result;
+      };
+
+      if (host) {
+        panel = mountDirectorPanel(host, (proposalId) => { selectProposal(proposalId); });
+        panel.showIdle();
+      }
+
       // --- simulation loop ----------------------------------------------
       const player = app.root.findByName('player') as Entity | null;
       let wins = 0;
@@ -247,12 +353,14 @@ export function createZhalmForestExperiment(): Experiment {
 
       const resetRun = (): void => {
         network.reset();
+        networkB.reset();
         scene.movePlayerTo(SPAWN);
         guardian.setPosition(DEN_POSITION.x, 0, DEN_POSITION.z);
       };
 
       onUpdate = (dt: number) => {
         network.update(dt);
+        networkB.update(dt);
 
         // player noise emission
         if (player?.rigidbody) {
@@ -264,7 +372,7 @@ export function createZhalmForestExperiment(): Experiment {
             const walkSpeed = tunables.get('player.walkSpeed');
             const loud = speed > walkSpeed + 0.6 ? tunables.get('zhalm.sprintNoise') : tunables.get('zhalm.walkNoise');
             const p = player.getPosition();
-            network.noiseAt(p.x, p.z, loud);
+            emitNoise(p.x, p.z, loud);
             spawnRing(p.x, p.z, loud);
           }
         }
@@ -279,10 +387,24 @@ export function createZhalmForestExperiment(): Experiment {
           ring.entity.setLocalScale(s, 0.05, s);
         }
 
-        // node glow follows network energy (write materials only on change)
-        for (const spec of NODE_SPECS) {
-          const visual = nodeVisuals.get(spec.id)!;
-          const target = NODE_BASE + network.nodeEnergy(spec.id) * (NODE_PEAK - NODE_BASE);
+        // director reactions: the forest reads the world flags (MCL-85)
+        const clusterBActive = flagIs(ZHALM_FLAGS.clusterB);
+        const regrouping = flagIs(ZHALM_FLAGS.regrouping);
+        if (clusterB.enabled !== clusterBActive) clusterB.enabled = clusterBActive;
+        regroupPhase += dt;
+
+        // node glow follows network energy (write materials only on change);
+        // a regrouping network pulses dimmed and in sync instead
+        const regroupGlow = NODE_BASE * (0.6 + 0.9 * (0.5 + 0.5 * Math.sin(regroupPhase * 1.8)));
+        const glowTargets: Array<[string, number]> = [
+          ...NODE_SPECS.map((spec): [string, number] => [
+            spec.id,
+            regrouping ? regroupGlow : NODE_BASE + network.nodeEnergy(spec.id) * (NODE_PEAK - NODE_BASE),
+          ]),
+          ...CLUSTER_B_SPECS.map((spec): [string, number] => [spec.id, NODE_BASE + networkB.nodeEnergy(spec.id) * (NODE_PEAK - NODE_BASE)]),
+        ];
+        for (const [id, target] of glowTargets) {
+          const visual = nodeVisuals.get(id)!;
           if (Math.abs(target - visual.shown) > 0.05) {
             visual.shown = target;
             visual.material.emissiveIntensity = target;
@@ -290,23 +412,46 @@ export function createZhalmForestExperiment(): Experiment {
           }
         }
 
-        // guardian state machine
-        const level = network.level();
+        // alert level across the listening clusters; entering 'alerted' is a NETWORK_ALERT
+        const loudest = clusterBActive && LEVEL_RANK[networkB.level()] > LEVEL_RANK[network.level()] ? networkB : network;
+        const level = clusterBActive ? higherLevel(network.level(), networkB.level()) : network.level();
+        if (level === 'alerted' && lastLevel !== 'alerted') onNetworkAlert(loudest.lastNoise() ?? { x: 0, z: 0 });
+        lastLevel = level;
+
+        // guardian: a selected director reaction overrides the alert-level state machine
         const gp = guardian.getPosition();
         let target: { x: number; z: number } | null = null;
         let speed = 0;
-        if (level === 'calm') {
-          wanderPhase += dt * 0.25;
-          target = { x: DEN_POSITION.x + Math.cos(wanderPhase) * 4, z: DEN_POSITION.z + Math.sin(wanderPhase) * 4 };
-          speed = 1.2;
-        } else if (level === 'suspicious') {
-          target = network.lastNoise();
-          speed = tunables.get('zhalm.investigateSpeed');
-        } else if (player) {
-          const pp = player.getPosition();
-          const toPlayer = Math.hypot(pp.x - gp.x, pp.z - gp.z);
-          target = toPlayer < 22 ? { x: pp.x, z: pp.z } : network.lastNoise();
-          speed = tunables.get('zhalm.chaseSpeed');
+        if (regrouping) {
+          guardianMode = 'regrouping';
+          target = REGROUP_POSITION;
+          speed = tunables.get('zhalm.investigateSpeed') + 1.5;
+        } else if (investigateTarget && flagIs(ZHALM_FLAGS.investigating)) {
+          guardianMode = 'investigating';
+          const toSource = Math.hypot(investigateTarget.x - gp.x, investigateTarget.z - gp.z);
+          if (toSource > 2.6) {
+            target = investigateTarget;
+            speed = tunables.get('zhalm.investigateSpeed');
+          } else {
+            searchPhase += dt * 0.9;
+            target = { x: investigateTarget.x + Math.cos(searchPhase) * 2.5, z: investigateTarget.z + Math.sin(searchPhase) * 2.5 };
+            speed = 1.6;
+          }
+        } else {
+          guardianMode = level;
+          if (level === 'calm') {
+            wanderPhase += dt * 0.25;
+            target = { x: DEN_POSITION.x + Math.cos(wanderPhase) * 4, z: DEN_POSITION.z + Math.sin(wanderPhase) * 4 };
+            speed = 1.2;
+          } else if (level === 'suspicious') {
+            target = loudest.lastNoise();
+            speed = tunables.get('zhalm.investigateSpeed');
+          } else if (player) {
+            const pp = player.getPosition();
+            const toPlayer = Math.hypot(pp.x - gp.x, pp.z - gp.z);
+            target = toPlayer < 22 ? { x: pp.x, z: pp.z } : loudest.lastNoise();
+            speed = tunables.get('zhalm.chaseSpeed');
+          }
         }
         if (target) {
           const dx = target.x - gp.x;
@@ -319,13 +464,15 @@ export function createZhalmForestExperiment(): Experiment {
           }
         }
 
-        // guardian visual state
-        const alertColor = ALERT_COLORS[level]!;
-        if (!coreMaterial.emissive.equals(alertColor)) {
-          coreMaterial.emissive = alertColor;
-          coreMaterial.emissiveIntensity = level === 'calm' ? 2.5 : 4;
+        // guardian visual state: amber while investigating, deep violet while regrouping
+        const guardianColor = guardianMode === 'regrouping'
+          ? REGROUP_COLOR
+          : guardianMode === 'investigating' ? INVESTIGATE_COLOR : ALERT_COLORS[level]!;
+        if (!coreMaterial.emissive.equals(guardianColor)) {
+          coreMaterial.emissive = guardianColor;
+          coreMaterial.emissiveIntensity = guardianMode === 'calm' ? 2.5 : 4;
           coreMaterial.update();
-          if (coreLight.light) coreLight.light.color = alertColor;
+          if (coreLight.light) coreLight.light.color = guardianColor;
         }
 
         // catch / win
@@ -351,14 +498,35 @@ export function createZhalmForestExperiment(): Experiment {
       (window as unknown as Record<string, unknown>).__zhalm = {
         level: () => network.level(),
         stimulation: () => network.stimulation(),
-        noiseAt: (x: number, z: number, radius: number) => network.noiseAt(x, z, radius),
-        nodeEnergy: (id: string) => network.nodeEnergy(id),
+        // Same path as player movement: sound network + observed WorldEvents.
+        noiseAt: (x: number, z: number, radius: number) => emitNoise(x, z, radius),
+        nodeEnergy: (id: string) => (NODE_SPECS.some((spec) => spec.id === id) ? network.nodeEnergy(id) : networkB.nodeEnergy(id)),
         guardianPosition: () => {
           const p = guardian.getPosition();
           return { x: p.x, y: p.y, z: p.z };
         },
         lastNoise: () => network.lastNoise(),
         score: () => ({ wins, catches }),
+        director: {
+          flags: () => ({ ...director.state().world_flags }),
+          revision: () => director.state().revision,
+          observedTypes: () => director.ledger.observed().map((event) => event.event_type),
+          ledgerKinds: () => director.ledger.entries().map((entry) => entry.kind),
+          runStatus: () => director.activeRun()?.status ?? null,
+          proposals: () => (director.activeRun()?.proposals ?? []).map((view) => ({
+            id: view.proposal.proposal_id,
+            intent: view.proposal.transition_intent.join(' '),
+            summary: view.proposal.summary,
+            status: view.gate.status,
+            reasons: [...view.gate.reasons],
+          })),
+          select: (proposalId: string) => {
+            const result = selectProposal(proposalId);
+            return result.ok ? { ok: true } : { ok: false, reason: result.reason };
+          },
+          guardianMode: () => guardianMode,
+          clusterBActive: () => clusterB.enabled,
+        },
       };
 
       scene.movePlayerTo(SPAWN);
@@ -374,6 +542,9 @@ export function createZhalmForestExperiment(): Experiment {
     destroy() {
       if (appRef && onUpdate) appRef.off('update', onUpdate);
       onUpdate = null;
+      if (pendingRun) { pendingRun.abort(); pendingRun = null; }
+      panel?.destroy();
+      panel = null;
       if (post) { post.destroy(); post = null; }
       if (appRef) {
         clearFog(appRef);
