@@ -5,7 +5,7 @@
   "design_status": "CONFLICT",
   "source_refs": ["MLOA:32735234#Zhalm-Druhen", "MLOA:20250626"],
   "runtime_adapter": "playcanvas-2.21.4",
-  "mechanics": ["noise-emission", "sensor-network-propagation", "alert-escalation", "investigate-chase", "reach-goal", "reset"],
+  "mechanics": ["noise-emission", "sensor-network-propagation", "alert-escalation", "investigate-chase", "reach-goal", "reset", "director-reaction-proposals"],
   "assets": ["character.hero.placeholder", "environment.test.ground"],
   "tunables": {
     "zhalm.walkNoise": 3,

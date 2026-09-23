@@ -1,0 +1,13 @@
+{
+  "proposal_id": "druhen-protection-demo",
+  "kind": "world_reaction",
+  "summary": "Reaction that depends on the unresolved Druhen protection rules (MCL-6).",
+  "rationale": "Demonstrates the policy gate: the required Druhen rule is an open point, not a canon fact.",
+  "required_facts": ["druhen-protection-rules"],
+  "state_preconditions": [],
+  "transition_intent": ["network_retreat_regroup"],
+  "source_refs": ["MCL-6"],
+  "design_status": "TENTATIVE",
+  "confidence": null,
+  "provider_trace": {}
+}

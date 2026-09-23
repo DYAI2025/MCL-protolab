@@ -1,0 +1,16 @@
+{
+  "proposal_id": "retreat-regroup",
+  "kind": "world_reaction",
+  "summary": "The Zhalm network dims and regroups; the guardian falls back to the grove heart.",
+  "rationale": "A dampened, synchronised pulse reads as regrouping and protects the objective instead of chasing.",
+  "required_facts": ["zhalm-sensor-network", "zhalm-network-pulse"],
+  "state_preconditions": [
+    { "flag_ref": "zhalm.network.regrouping", "equals": false },
+    { "location_ref": "zhalm-forest.heart" }
+  ],
+  "transition_intent": ["network_retreat_regroup"],
+  "source_refs": ["MLOA:32735234#Zhalm-Druhen", "MLOA:64815106"],
+  "design_status": "TENTATIVE",
+  "confidence": null,
+  "provider_trace": {}
+}

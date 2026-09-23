@@ -1,0 +1,16 @@
+{
+  "proposal_id": "guardian-investigates",
+  "kind": "world_reaction",
+  "summary": "The Zhalm guardian investigates the alarm source and searches there.",
+  "rationale": "The network alert marks a position; the guardian is the large element of the distributed network.",
+  "required_facts": ["zhalm-sensor-network", "zhalm-large-and-sensor-elements"],
+  "state_preconditions": [
+    { "flag_ref": "zhalm.guardian.investigating", "equals": false },
+    { "entity_ref": "zhalm-guardian" }
+  ],
+  "transition_intent": ["guardian_investigates_noise"],
+  "source_refs": ["MLOA:32735234#Zhalm-Druhen", "MLOA:64815106"],
+  "design_status": "TENTATIVE",
+  "confidence": null,
+  "provider_trace": {}
+}

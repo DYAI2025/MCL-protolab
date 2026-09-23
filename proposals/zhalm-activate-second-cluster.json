@@ -1,0 +1,16 @@
+{
+  "proposal_id": "activate-second-cluster",
+  "kind": "world_reaction",
+  "summary": "A second Zhalm sensor cluster awakens near the entry route.",
+  "rationale": "More listening roots on the player's route make the network's reach visible.",
+  "required_facts": ["zhalm-sensor-network"],
+  "state_preconditions": [
+    { "flag_ref": "zhalm.cluster-b.active", "equals": false },
+    { "entity_ref": "zhalm-sensor-b0" }
+  ],
+  "transition_intent": ["activate_second_sensor_cluster"],
+  "source_refs": ["MLOA:32735234#Zhalm-Druhen", "MLOA:64815106"],
+  "design_status": "TENTATIVE",
+  "confidence": null,
+  "provider_trace": {}
+}
