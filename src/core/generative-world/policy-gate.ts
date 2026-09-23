@@ -14,22 +14,28 @@ import { validateContract } from './validation.ts';
 
 export const POLICY_GATE_VERSION = 'mcl-84-policy-gate-v1';
 
-export type GateReasonCode =
-  | 'SCHEMA_INVALID'
-  | 'KIND_NOT_ALLOWED'
-  | 'SOURCE_REFS_MISSING'
-  | 'REQUIRED_FACT_MISSING'
-  | 'CANON_PROMOTION_FORBIDDEN'
-  | 'DESIGN_STATUS_INVALID'
-  | 'NOT_ACTIONABLE'
-  | 'UNKNOWN_INTENT'
-  | 'UNKNOWN_FLAG'
-  | 'SCOPE_VIOLATION'
-  | 'PRECONDITION_UNSUPPORTED'
-  | 'PRECONDITION_FAILED'
-  | 'UNKNOWN_ENTITY'
-  | 'UNKNOWN_LOCATION'
-  | 'PRIVACY_OR_SECRET_FIELD';
+export const GATE_REASON_CODES = [
+  'SCHEMA_INVALID',
+  'KIND_NOT_ALLOWED',
+  'SOURCE_REFS_MISSING',
+  'REQUIRED_FACT_MISSING',
+  'CANON_PROMOTION_FORBIDDEN',
+  'DESIGN_STATUS_INVALID',
+  'NOT_ACTIONABLE',
+  'UNKNOWN_INTENT',
+  'UNKNOWN_FLAG',
+  'SCOPE_VIOLATION',
+  'PRECONDITION_UNSUPPORTED',
+  'PRECONDITION_FAILED',
+  'UNKNOWN_ENTITY',
+  'UNKNOWN_LOCATION',
+  'PRIVACY_OR_SECRET_FIELD',
+] as const;
+
+export type GateReasonCode = (typeof GATE_REASON_CODES)[number];
+
+/** Replaces blocked content wherever a rejected proposal is stored or shown. */
+export const REDACTION_MARKER = '[redacted: PRIVACY_OR_SECRET_FIELD]';
 
 export type GateRule =
   | 'schema'
@@ -81,14 +87,29 @@ export interface GateInput {
 const PROPOSAL_DESIGN_STATUSES = ['TENTATIVE', 'AMBIGUOUS', 'CONFLICT'];
 
 const SECRET_KEY = /^(api[_-]?key|apikey|secret|client[_-]?secret|token|access[_-]?token|refresh[_-]?token|password|passwd|authorization|cookie|session[_-]?id|email|phone|child[_-]?name|real[_-]?name|address)$/i;
-const SECRET_VALUE = /\bBearer\s+[A-Za-z0-9._~+/-]+=*|\bsk-[A-Za-z0-9_-]{16,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|\bdata:(audio|image|video)\/[a-z0-9.+-]+;base64,|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+
+/** Token and address formats. Case-sensitive where prose would otherwise match ("the bearer of …"). */
+const SECRET_VALUE_PATTERNS: readonly RegExp[] = [
+  /\bBearer\s+[A-Za-z0-9._~+/-]{16,}=*/, // bearer tokens
+  /\beyJ[A-Za-z0-9_-]{5,}\.eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/, // JWTs
+  /\bsk-[A-Za-z0-9_-]{16,}/, // sk- API keys
+  /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{30,}|\bgithub_pat_[A-Za-z0-9_]{20,}/, // GitHub tokens
+  /\bAKIA[0-9A-Z]{16}\b/, // AWS access key ids
+  /\bAIza[0-9A-Za-z_-]{35}/, // Google API keys
+  /\bxox[abposr]-[A-Za-z0-9-]{10,}/, // Slack tokens
+  /-----BEGIN [A-Z ]*PRIVATE KEY(?: BLOCK)?-----/, // PEM and PGP private keys
+  /\bdata:(?:audio|image|video)\/[a-z0-9.+-]+;base64,/i, // inline private media
+  /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.\p{L}{2,}/u, // e-mail addresses, including IDN
+];
+
+const containsSecret = (text: string): boolean => SECRET_VALUE_PATTERNS.some((pattern) => pattern.test(text));
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 
 /** Paths of secret- or private-data-like keys and values anywhere in a JSON value. */
 function privacyFindings(value: unknown, path = '$'): string[] {
-  if (typeof value === 'string') return SECRET_VALUE.test(value) ? [path] : [];
+  if (typeof value === 'string') return containsSecret(value) ? [path] : [];
   if (Array.isArray(value)) return value.flatMap((item, index) => privacyFindings(item, `${path}[${index}]`));
   if (isRecord(value)) {
     return Object.entries(value).flatMap(([key, child]) => [
@@ -97,6 +118,23 @@ function privacyFindings(value: unknown, path = '$'): string[] {
     ]);
   }
   return [];
+}
+
+/**
+ * Copy of a value with every privacy finding replaced by REDACTION_MARKER.
+ * The gate still rejects the original; this copy is what the ledger stores and
+ * the harness shows, so blocked content is never persisted or displayed.
+ */
+export function redactPrivacyFindings<T>(value: T): T {
+  const redact = (node: unknown): unknown => {
+    if (typeof node === 'string') return containsSecret(node) ? REDACTION_MARKER : node;
+    if (Array.isArray(node)) return node.map(redact);
+    if (isRecord(node)) {
+      return Object.fromEntries(Object.entries(node).map(([key, child]) => [key, SECRET_KEY.test(key) ? REDACTION_MARKER : redact(child)]));
+    }
+    return node;
+  };
+  return redact(value) as T;
 }
 
 export function evaluateProposal(proposal: unknown, input: GateInput): GateResult {
@@ -133,7 +171,14 @@ export function evaluateProposal(proposal: unknown, input: GateInput): GateResul
 
     check('kind', scope.allowed_kinds.includes(valid.kind) ? [] : [['KIND_NOT_ALLOWED', `kind "${valid.kind}" is not allowed in ${scope.experiment_id}`]], `kind "${valid.kind}" allowed`);
 
-    check('source_refs', valid.source_refs.length > 0 ? [] : [['SOURCE_REFS_MISSING', 'proposal cites no source']], `${valid.source_refs.length} source ref(s)`);
+    const blankRefs = valid.source_refs.filter((ref) => ref.trim() === '').length;
+    check(
+      'source_refs',
+      valid.source_refs.length === 0
+        ? [['SOURCE_REFS_MISSING', 'proposal cites no source']]
+        : blankRefs > 0 ? [['SOURCE_REFS_MISSING', `${blankRefs} blank source ref(s)`]] : [],
+      `${valid.source_refs.length} source ref(s)`,
+    );
 
     const missingFacts = valid.required_facts.filter((fact) => !Object.hasOwn(canon.facts, fact));
     check(
