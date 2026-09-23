@@ -1,0 +1,32 @@
+{
+  "projection_id": "zhalm-forest-canon-v1",
+  "source_refs": ["MLOA:32735234#Zhalm-Druhen", "MLOA:20250626", "MLOA:64815106"],
+  "version": "1",
+  "generated_at": "2026-09-23T00:00:00Z",
+  "facts": {
+    "zhalm-sensor-network": {
+      "statement": "The Zhalm branch is a stealth/hunt predator that uses a distributed root/sensor network.",
+      "design_status": "CONFLICT",
+      "source_refs": ["MLOA:32735234#Zhalm-Druhen", "MLOA:20250626"]
+    },
+    "zhalm-large-and-sensor-elements": {
+      "statement": "The Zhalm branch combines a large creature with smaller environmental sensor/root elements; the exact final scale remains open.",
+      "design_status": "CONFLICT",
+      "source_refs": ["MLOA:32735234#Zhalm-Druhen", "MLOA:20250626"]
+    },
+    "zhalm-network-pulse": {
+      "statement": "A visible signal pulse travels through the living root network.",
+      "design_status": "CONFLICT",
+      "source_refs": ["MLOA:32735234#Zhalm-Druhen", "MLOA:20250626"]
+    }
+  },
+  "constraints": {
+    "proposals-are-derived": "Director proposals are DERIVED and never become canon (MLOA:64815106).",
+    "experiment-local": "Reactions apply only inside the zhalm-forest-v1 prototype."
+  },
+  "open_points": [
+    "MCL-6: the Druhen rule system and protection logic are not consolidated.",
+    "The Zhalm/Druhen naming conflict is unresolved (design_status CONFLICT).",
+    "Final Zhalm scale and stealth AI remain open."
+  ]
+}

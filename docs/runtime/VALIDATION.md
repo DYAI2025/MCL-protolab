@@ -32,9 +32,32 @@ An unexecuted gate is `not_run`, never `passed`. Every gate below was also seen 
 - **e2e:preview**: initially red because the preview Playwright configuration did not exist; after implementation the local run reached the browser launch and stopped on the missing Chromium binary. CI installs Chromium before executing the preserved gate.
 - **deployment container**: the smoke gate exits 127 locally when Docker is unavailable instead of reporting a false pass. Its first Docker-capable CI run failed with `unable to find user caddy`, proving the non-root start assertion caught an invalid image assumption; the runtime now creates an explicit unprivileged `mcl` user. The next run exposed a readiness race between HTTP startup and Docker's first scheduled health probe; the smoke now waits for and diagnoses both states independently.
 
+## Generative World Director slice — MCL-81 … MCL-85
+
+Sprint "MCL Protolab S1 – Director" (Jira 777). Local run 2026-09-23 (macOS arm64, Node 24.19.0) on `feat/mcl-85-zhalm-director-slice@029c951`, the implementation head after the review round. It is stacked on MCL-84 `d15eed5`, MCL-83 `38ef43c`, MCL-82 `e53906b` and MCL-81 `4a6066d`; the story branches carry the review fixes and are merged upward without force-push. CI evidence for each story head: the `gates` and `deployment-container` checks of PRs #5–#9.
+
+| Gate | Command | Raw result | Status |
+|---|---|---|---|
+| Types | `npm run typecheck` | exit 0 | PASS |
+| Lint | `npm run lint` | exit 0, 0 warnings | PASS |
+| Import boundaries | `npm run boundaries` | `✔ no dependency violations found (118 modules, 323 dependencies cruised)` | PASS |
+| Contracts | `npm run validate:contracts` | `31/31 documents valid` | PASS |
+| Unit + integration | `npm test` | `Tests  348 passed (348)`, 31 files | PASS |
+| Build | `npm run build` | exit 0; bundle 1,649.55 kB (gzip 435.58 kB) — +50.4 kB gzip against 1,483.67 kB / 385.18 kB before the director (AJV at runtime + slice) | PASS |
+| Asset determinism | `npm run generate:assets` + `git diff --exit-code` | empty diff | PASS |
+| Browser smoke | `npm run e2e` | `9 passed (3.0m)` — the seven existing specs plus two director specs | PASS |
+| Preview | `npm run e2e:preview` | `1 passed` | PASS |
+| Fresh clone | clone of the pre-review head `6390c7f` from GitHub → `npm ci` → typecheck, lint, boundaries, contracts, test, build | all exit 0, 320/320 tests — repeated on the final head in CI | PASS |
+| Human Play/Design Review | MCL-91, by hand | not executed — no automated test substitutes | not_run |
+
+Red before green: every new unit/integration test file was first run red (module missing). The director e2e first failed on the missing hook (`2 failed`, TimeoutError). The core dependency guard was canaried with a planted `openai` import and a clock call, and after the review with `crypto.randomUUID()`, a dynamic `import ()`, a bare `Date()` and `new  Date ()` — each turned it red.
+
+Review round: an independent read-only review of the whole sprint diff found no blocker and 15 findings (three latent majors). Every finding was reproduced before it was fixed, test-first, on the owning story branch: B1 reset/overlapping runs and fingerprint-based STALE_RUN, B2 redacted storage and display of privacy-rejected proposals, B3 checked ledger appends, B4 failed or exhausted runs no longer silence the director, B5 pulse-driven SENSOR_TRIGGERED, B6 dry run before an accepted selection, B7 one selection_ref per attempt, B8 strictNumbers and non-representable input refused instead of thrown or silently lost, B9 token/address patterns without prose false positives, B10 wider dependency guard, B11 blank source refs, B12 read-only session views, B13 abort-listener cleanup, B14 FAILED for broken input, B15 reason-code coverage from the source and a polling regroup e2e. Deferred with a ticket: checking source refs against the canon projection (belongs to the real provider boundary, MCL-88).
+
 ## Evidence artifacts
 
 - `artifacts/screens/playground.png` — playground with player, crates, landmarks, inspector.
+- `artifacts/screens/zhalm-director.png` — director slice after a human choice: 3/4 proposals accepted, the Druhen demonstration blocked, applied diff `zhalm.cluster-b.active false → true · revision 1 → 2`, cluster b visible on the entry route.
 - `artifacts/screens/creature-gallery.png` — all four concepts with FX states active (mugosh `hostile`, flammenwolf `prowling` + burn trail, veras `drifting`, zhalm `pulse`).
 - `docs/architecture/DECISION-2026-08-29-playcanvas-risk-gate.md` — walking-skeleton go/no-go outcome.
 - `docs/plans/2026-08-30-world-editor-vps-test-instance.md` — requirements, plan-fidelity review and deployment blocker.
