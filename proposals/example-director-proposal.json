@@ -1,0 +1,13 @@
+{
+  "proposal_id": "proposal-zhalm-001",
+  "kind": "world_event",
+  "summary": "A second Zhalm sensor cluster becomes active.",
+  "rationale": "Derived from the triggered sound-network event.",
+  "required_facts": ["zhalm-network-exists"],
+  "state_preconditions": [],
+  "transition_intent": [],
+  "source_refs": ["MLOA:64815106"],
+  "design_status": "TENTATIVE",
+  "confidence": null,
+  "provider_trace": {}
+}

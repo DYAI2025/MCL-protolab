@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "state_id",
+    "entities",
+    "locations",
+    "factions",
+    "relationships",
+    "quests",
+    "inventory",
+    "world_flags",
+    "calendar",
+    "active_events",
+    "source_refs",
+    "revision"
+  ],
+  "properties": {
+    "state_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "entities": {
+      "type": "object"
+    },
+    "locations": {
+      "type": "object"
+    },
+    "factions": {
+      "type": "object"
+    },
+    "relationships": {
+      "type": "object"
+    },
+    "quests": {
+      "type": "object"
+    },
+    "inventory": {
+      "type": "object"
+    },
+    "world_flags": {
+      "type": "object"
+    },
+    "calendar": {
+      "type": "object"
+    },
+    "active_events": {
+      "type": "array"
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

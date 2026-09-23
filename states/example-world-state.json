@@ -1,0 +1,14 @@
+{
+  "state_id": "glade-initial-state",
+  "entities": {},
+  "locations": {},
+  "factions": {},
+  "relationships": {},
+  "quests": {},
+  "inventory": {},
+  "world_flags": {},
+  "calendar": {},
+  "active_events": [],
+  "source_refs": ["MLOA:64815106"],
+  "revision": 1
+}

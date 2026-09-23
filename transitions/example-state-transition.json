@@ -1,0 +1,14 @@
+{
+  "transition_id": "transition-zhalm-001",
+  "source_state_ref": "glade-initial-state",
+  "proposal_ref": "proposal-zhalm-001",
+  "operations": [
+    {
+      "op": "SET_WORLD_FLAG",
+      "flag_ref": "zhalm-network-alert-active",
+      "value": true
+    }
+  ],
+  "source_refs": ["MLOA:64815106"],
+  "revision": 1
+}

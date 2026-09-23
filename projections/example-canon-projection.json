@@ -1,0 +1,12 @@
+{
+  "projection_id": "mcl-director-canon-v1",
+  "source_refs": [
+    "MLOA:20250626",
+    "MLOA:64815106"
+  ],
+  "version": "1",
+  "generated_at": "2026-09-19T00:00:00Z",
+  "facts": {},
+  "constraints": {},
+  "open_points": []
+}

@@ -1,0 +1,10 @@
+{
+  "branch_id": "branch-zhalm-001",
+  "parent_state_ref": "glade-initial-state",
+  "event_ref": "zhalm-network-alert-001",
+  "proposal_ref": "proposal-zhalm-001",
+  "selection_ref": "selection-zhalm-001",
+  "transition_ref": "transition-zhalm-001",
+  "source_refs": ["MLOA:64815106"],
+  "revision": 1
+}

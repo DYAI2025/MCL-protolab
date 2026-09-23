@@ -31,6 +31,62 @@ if (existsSync('schemas/creature-concept.schema.json') && existsSync('concepts/c
   }
 }
 
+// Every world state document, if the world-state schema is present.
+if (existsSync('schemas/world-state.schema.json') && existsSync('states')) {
+  for (const f of readdirSync('states').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/world-state.schema.json', join('states', f)]);
+  }
+}
+
+// Every canon projection document, if the canon-projection schema is present.
+if (existsSync('schemas/canon-projection.schema.json') && existsSync('projections')) {
+  for (const f of readdirSync('projections').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/canon-projection.schema.json', join('projections', f)]);
+  }
+}
+
+// Every world event document, if the world-event schema is present.
+if (existsSync('schemas/world-event.schema.json') && existsSync('world-events')) {
+  for (const f of readdirSync('world-events').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/world-event.schema.json', join('world-events', f)]);
+  }
+}
+
+// Every director run document, if the director-run schema is present.
+if (existsSync('schemas/director-run.schema.json') && existsSync('director-runs')) {
+  for (const f of readdirSync('director-runs').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/director-run.schema.json', join('director-runs', f)]);
+  }
+}
+
+// Every director proposal document, if the director-proposal schema is present.
+if (existsSync('schemas/director-proposal.schema.json') && existsSync('proposals')) {
+  for (const f of readdirSync('proposals').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/director-proposal.schema.json', join('proposals', f)]);
+  }
+}
+
+// Every state transition document, if the state-transition schema is present.
+if (existsSync('schemas/state-transition.schema.json') && existsSync('transitions')) {
+  for (const f of readdirSync('transitions').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/state-transition.schema.json', join('transitions', f)]);
+  }
+}
+
+// Every branch node document, if the branch-node schema is present.
+if (existsSync('schemas/branch-node.schema.json') && existsSync('branches')) {
+  for (const f of readdirSync('branches').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/branch-node.schema.json', join('branches', f)]);
+  }
+}
+
+// Every replay ref document, if the replay-ref schema is present.
+if (existsSync('schemas/replay-ref.schema.json') && existsSync('replays')) {
+  for (const f of readdirSync('replays').filter((f) => f.endsWith('.json'))) {
+    pairs.push(['schemas/replay-ref.schema.json', join('replays', f)]);
+  }
+}
+
 let failed = 0;
 for (const [schemaPath, docPath] of pairs) {
   const validate = ajv.compile(read(schemaPath));

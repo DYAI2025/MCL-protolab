@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "canon_projection_ref",
+    "world_state_ref",
+    "event_refs",
+    "status",
+    "source_refs",
+    "revision"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "canon_projection_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "world_state_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["CREATED", "PREPARING", "RUNNING", "STOPPED", "FAILED"]
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

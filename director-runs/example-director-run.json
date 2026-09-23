@@ -1,0 +1,9 @@
+{
+  "run_id": "zhalm-director-run-001",
+  "canon_projection_ref": "mcl-director-canon-v1",
+  "world_state_ref": "glade-initial-state",
+  "event_refs": ["zhalm-network-alert-001"],
+  "status": "CREATED",
+  "source_refs": ["MLOA:64815106"],
+  "revision": 1
+}
