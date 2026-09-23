@@ -34,22 +34,25 @@ An unexecuted gate is `not_run`, never `passed`. Every gate below was also seen 
 
 ## Generative World Director slice — MCL-81 … MCL-85
 
-Sprint "MCL Protolab S1 – Director" (Jira 777). Local run 2026-09-23 (macOS arm64, Node 24.19.0) on `feat/mcl-85-zhalm-director-slice@ff8a8e7`, the implementation head stacked on MCL-84 `0b616a1`, MCL-83 `99a5cc5`, MCL-82 `74ab31f` and MCL-81 `4a6066d`. CI evidence for each story head: the `gates` and `deployment-container` checks of PRs #5–#9.
+Sprint "MCL Protolab S1 – Director" (Jira 777). Local run 2026-09-23 (macOS arm64, Node 24.19.0) on `feat/mcl-85-zhalm-director-slice@029c951`, the implementation head after the review round. It is stacked on MCL-84 `d15eed5`, MCL-83 `fe567e2`, MCL-82 `e53906b` and MCL-81 `4a6066d`; the story branches carry the review fixes and are merged upward without force-push. CI evidence for each story head: the `gates` and `deployment-container` checks of PRs #5–#9.
 
 | Gate | Command | Raw result | Status |
 |---|---|---|---|
 | Types | `npm run typecheck` | exit 0 | PASS |
-| Lint | `npm run lint` | exit 0 | PASS |
-| Import boundaries | `npm run boundaries` | `✔ no dependency violations found (118 modules, 321 dependencies cruised)` | PASS |
+| Lint | `npm run lint` | exit 0, 0 warnings | PASS |
+| Import boundaries | `npm run boundaries` | `✔ no dependency violations found (118 modules, 323 dependencies cruised)` | PASS |
 | Contracts | `npm run validate:contracts` | `31/31 documents valid` | PASS |
-| Unit + integration | `npm test` | `Tests  320 passed (320)`, 31 files | PASS |
-| Build | `npm run build` | exit 0; bundle 1,646.36 kB (gzip 434.55 kB) — +49.4 kB gzip against 1,483.67 kB / 385.18 kB before the director (AJV at runtime + slice) | PASS |
+| Unit + integration | `npm test` | `Tests  348 passed (348)`, 31 files | PASS |
+| Build | `npm run build` | exit 0; bundle 1,649.55 kB (gzip 435.58 kB) — +50.4 kB gzip against 1,483.67 kB / 385.18 kB before the director (AJV at runtime + slice) | PASS |
 | Asset determinism | `npm run generate:assets` + `git diff --exit-code` | empty diff | PASS |
-| Browser smoke | `npm run e2e` | `9 passed (2.6m)` — the seven existing specs plus two director specs | PASS |
+| Browser smoke | `npm run e2e` | `9 passed (3.0m)` — the seven existing specs plus two director specs | PASS |
 | Preview | `npm run e2e:preview` | `1 passed` | PASS |
+| Fresh clone | clone of the pre-review head `6390c7f` from GitHub → `npm ci` → typecheck, lint, boundaries, contracts, test, build | all exit 0, 320/320 tests — repeated on the final head in CI | PASS |
 | Human Play/Design Review | MCL-91, by hand | not executed — no automated test substitutes | not_run |
 
-Red before green: every new unit/integration test file was first run red (module missing). The director e2e first failed on the missing hook (`2 failed`, TimeoutError). The core dependency guard was canaried with a planted `openai` import and a clock call (`2 failed`). During implementation the e2e exposed an ambiguous selector (two proposals share an intent; only the accepted one may be clicked) and a frame race (runtime state read before the next update); the spec now scopes to accepted proposals and waits for runtime state.
+Red before green: every new unit/integration test file was first run red (module missing). The director e2e first failed on the missing hook (`2 failed`, TimeoutError). The core dependency guard was canaried with a planted `openai` import and a clock call, and after the review with `crypto.randomUUID()`, a dynamic `import ()`, a bare `Date()` and `new  Date ()` — each turned it red.
+
+Review round: an independent read-only review of the whole sprint diff found no blocker and 15 findings (three latent majors). Every finding was reproduced before it was fixed, test-first, on the owning story branch: B1 reset/overlapping runs and fingerprint-based STALE_RUN, B2 redacted storage and display of privacy-rejected proposals, B3 checked ledger appends, B4 failed or exhausted runs no longer silence the director, B5 pulse-driven SENSOR_TRIGGERED, B6 dry run before an accepted selection, B7 one selection_ref per attempt, B8 strictNumbers and non-representable input refused instead of thrown or silently lost, B9 token/address patterns without prose false positives, B10 wider dependency guard, B11 blank source refs, B12 read-only session views, B13 abort-listener cleanup, B14 FAILED for broken input, B15 reason-code coverage from the source and a polling regroup e2e. Deferred with a ticket: checking source refs against the canon projection (belongs to the real provider boundary, MCL-88).
 
 ## Evidence artifacts
 
