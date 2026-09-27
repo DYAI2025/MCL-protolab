@@ -29,7 +29,7 @@ npm run generate:assets    # blockmodel specs → GLB + .bbmodel (byte-determini
 
 Single unit test: `npx vitest run src/core/events/emitter.test.ts`. Single e2e spec: `npx playwright test e2e/smoke.spec.ts`. Verified 2026-09-23 on Node 24.19.0: every command above except `npm ci` / `playwright install` (already installed) and the Docker smoke (daemon was down). Reference: `docs/runtime/SETUP.md`.
 
-CI (`.github/workflows/gates.yml`, every push and PR): `npm ci` → `generate:assets` + `git diff --exit-code -- public/assets/generated assets/blockmodels/bbmodel` → typecheck → lint → boundaries → validate:contracts → test → build → e2e → e2e:preview; a second job runs the Docker smoke.
+CI (`.github/workflows/gates.yml`, every push and PR): `npm ci` → `generate:assets` + `git diff --exit-code -- public/assets/generated assets/blockmodels/bbmodel` → `npx playwright install --with-deps chromium` → typecheck → lint → boundaries → validate:contracts → test → build → e2e → e2e:preview; screenshots and test results upload as the `runtime-evidence` artifact even when a step fails. A second job, `deployment-container`, runs the Docker smoke only after `gates` passes.
 
 E2E traps:
 - Specs overwrite the **tracked** evidence PNGs in `artifacts/screens/`. After a local run, `git restore artifacts/screens` unless you are deliberately refreshing evidence.
