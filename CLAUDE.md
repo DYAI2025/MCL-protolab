@@ -4,67 +4,98 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repository is
 
-The **disposable gameplay-prototyping lab** for MC Legends / Legends of Avaloria (`DYAI2025/MCL-protolab`). Current state: the runtime **is built** on `feat/prototype-runtime-foundation` (draft PR #3) — PlayCanvas 2.21.4 + Ammo physics, third-person playground, experiment registry with reset lifecycle, debug inspector with live tunables, creature FX gallery (mugosh/flammenwolf/veras/zhalm with deterministic FX states), 4-test Playwright smoke, full gate chain green locally and in CI. The PlayCanvas-first risk gate is CONFIRMED (`docs/architecture/DECISION-2026-08-29-playcanvas-risk-gate.md`); ADR-0003 records the runtime decision. Remaining plan work: fresh-clone gate (Task 18), manual runtime gate (Task 19, needs Ben), delivery report (Task 20).
+The **disposable gameplay-prototyping lab** for MC Legends / Legends of Avaloria (`DYAI2025/MCL-protolab`): PlayCanvas 2.21.4 + Ammo physics + Vite, one browser *experiment* per gameplay hypothesis — play on localhost, tune live, keep or discard the learning. PRs #1–#9 are merged to `master` (runtime foundation, two audits, MCL-70 VPS test slice; #5–#9 the generative-world director slice MCL-81 … MCL-85); new work runs on per-ticket branches (`feat/mcl-<n>-<slug>`). Gate-by-gate status — including what is still `not_run` (manual runtime gate, mission §8, needs Ben) or blocked (VPS DNS/TLS) — lives in `docs/runtime/VALIDATION.md`; `docs/architecture/VALIDATION.md` is only the historical planning-run record.
 
-Read `AGENTS.md` and `docs/architecture/ADR-0002-prototype-lab.md` before changing anything architectural — they are the binding rule sources. The executable work plan is `docs/plans/2026-08-23-runtime-foundation-implementation-plan.md`; where `docs/plans/2026-08-23-runtime-foundation-audit-addendum.md` is more specific, it wins. The plan's **"Known traps, pre-collected"** section lists verified PlayCanvas 2.21.4 / Ammo / Vite / Playwright pitfalls — read it before touching engine code; every item there was measured, not assumed.
+Binding rule sources: `AGENTS.md` and `docs/architecture/ADR-0002-prototype-lab.md` — read both before changing anything architectural. Runtime decision: ADR-0003; static test deployment: ADR-0004; `docs/architecture/SOURCE_MAP.md` maps claims to evidence (MC_legends commit, Confluence MLOA pages, Jira). Where `docs/plans/2026-08-23-runtime-foundation-audit-addendum.md` is more specific than the mission/design, it wins. The implementation plan's **"Known traps, pre-collected"** section (`docs/plans/2026-08-23-runtime-foundation-implementation-plan.md`) lists measured PlayCanvas 2.21.4 / Ammo / Vite / Playwright pitfalls — read it before touching engine code.
 
-## Commands (all verified working)
+## Commands
 
-Node is pinned to **24.19.0** (`.nvmrc`, `engines` + `engine-strict=true`). The system Node may be older — `nvm use` first or npm install fails.
+Node is pinned to **24.19.0** (`.nvmrc`, `engines`, `.npmrc engine-strict=true`); `npm ci` fails on older Node. nvm is a shell function that non-interactive shells (Claude Code's Bash tool) don't load, so a bare `node` there can be an older install — run `source ~/.nvm/nvm.sh && nvm use >/dev/null && <command>` in one call.
 
 ```bash
-nvm use                    # 24.19.0 — required
-npm ci                     # install (plus: npx playwright install chromium, once)
-npm run dev                # Vite dev server; ?experiment=creature-fx-gallery for the gallery
-npm run typecheck          # tsc across src, experiments, e2e, configs
-npm run lint               # eslint . (includes boundaries plugin)
-npm run boundaries         # dependency-cruiser import-boundary gate
-npm run validate:contracts # ajv schema gate over experiment/asset/creature docs
-npm test                   # vitest run (unit, src/core)
-npm run build              # tsc + vite build
-npm run e2e                # Playwright smoke (starts its own Vite on :5173)
+npm ci && npx playwright install chromium   # browser once per machine / Playwright bump
+npm run dev                # Vite on :5173 — /?experiment=<id>, default playground; R resets
+npm run typecheck          # tsc over src, experiments, e2e, vite.config.ts, playwright.config.ts (NOT scripts/)
+npm run lint               # eslint . incl. eslint-plugin-boundaries
+npm run boundaries         # dependency-cruiser over src + experiments
+npm run validate:contracts # ajv: every schema vs its documents (table below)
+npm test                   # vitest (node env): *.test.ts under src/, experiments/, scripts/
+npm run build              # tsc + vite build; the engine chunk-size warning is expected
+npm run e2e                # Playwright, starts (or reuses) a dev server on :5173; all specs but production-deployment
+npm run e2e:preview        # build, then production-deployment.spec.ts against vite preview on :4173
+npm run generate:assets    # blockmodel specs → GLB + .bbmodel (byte-deterministic)
+./scripts/smoke-deployment.sh  # Docker image smoke; needs a running Docker daemon
 ```
 
-Run a single unit test: `npx vitest run src/core/events/emitter.test.ts`. Single e2e spec: `npx playwright test e2e/gallery.spec.ts`. Contract validation: `npm run validate:contracts` (ajv over all schemas vs experiment/asset/creature documents — extend `scripts/validate-contracts.mjs` when a new contract lands). Full verified command reference: `docs/runtime/SETUP.md`. **Adding a new experiment: follow `docs/runtime/EXTENDING.md`** (contract → implement `Experiment` → register in `src/shell/bootstrap.ts` → assets via registry → gates).
+Single unit test: `npx vitest run src/core/events/emitter.test.ts`. Single e2e spec: `npx playwright test e2e/smoke.spec.ts`. Verified 2026-09-23 on Node 24.19.0: every command above except `npm ci` / `playwright install` (already installed) and the Docker smoke (daemon was down). Reference: `docs/runtime/SETUP.md`.
+
+CI (`.github/workflows/gates.yml`, every push and PR): `npm ci` → `generate:assets` + `git diff --exit-code -- public/assets/generated assets/blockmodels/bbmodel` → `npx playwright install --with-deps chromium` → typecheck → lint → boundaries → validate:contracts → test → build → e2e → e2e:preview; screenshots and test results upload as the `runtime-evidence` artifact even when a step fails. A second job, `deployment-container`, runs the Docker smoke only after `gates` passes.
+
+E2E traps:
+- Specs overwrite the **tracked** evidence PNGs in `artifacts/screens/`. After a local run, `git restore artifacts/screens` unless you are deliberately refreshing evidence.
+- Locally `reuseExistingServer` is on — whatever already listens on :5173 (including another checkout's dev server) is what gets tested.
+- `webServer.url` must be `http://localhost:…`, never `127.0.0.1` (measured: 120 s timeout). CI uses one worker (SwiftShader WebGL); the 90–180 s spec budgets are deliberate.
 
 ## Architecture
 
-- `src/core/` — engine-agnostic pure logic (events, tunables, experiment/asset registries, debug state). TDD'd with Vitest; must stay unit-testable without a browser.
-- `src/runtime/` — the only code allowed to import PlayCanvas; owns the integration surface (boot/scene, input + third-person camera, physics hooks, asset loading, audio/fx, debug hooks, reset/smoke lifecycle). Explicitly **not** a universal engine-abstraction layer.
-- `experiments/` — isolated scenes consuming core + runtime; each validates against `schemas/experiment.schema.json`.
-- `public/ammo/` — Ammo.js physics binaries with provenance (`SOURCE.md`, zlib `LICENSE`). Served root-absolute; must be loaded via `pc.WasmModule` **before** `app.start()` (see plan traps).
-- Import boundaries are machine-enforced by `.dependency-cruiser.cjs` (`npm run boundaries`), not prose: core→runtime, core→playcanvas, core/runtime→experiments, and any MC_legends dependency are all `error`. In that config, use `doNotFollow` for node_modules — **never `exclude`**, which silently kills the core-not-to-playcanvas rule (measured 2026-08-23).
-- `tsconfig.json` uses `erasableSyntaxOnly` — no enums/namespaces/parameter properties; use string-literal unions.
-- Engine integration is proven by Playwright smoke + manual gate, not unit tests. Playwright `webServer.url` must be `http://localhost:…`, never `127.0.0.1` (measured: 120 s timeout).
+Boot path: `index.html` → `src/main.ts` → `src/shell/bootstrap.ts` → `bootRuntime()` → `registry.load(?experiment=<id>)`.
 
-## Governance status
+- `src/shell/bootstrap.ts` — the **only composition root** (the only file that imports experiments). Creates the central tunables spec (each key becomes an inspector slider; experiment keys such as `zhalm.*` live here too, mirrored in that experiment's `experiment.json`), the typed event bus and the third-person player rig; registers every experiment, binds `R` to reset, mounts the inspector and exposes the `window.__protolab` test hook.
+- `src/core/` — engine-agnostic pure logic, TDD'd with Vitest: event emitter, tunables, experiment registry (destroy-before-init; reset emits `EXPERIMENT_RESET`), asset registry with fallback chains, creature concepts, inspector state, the promoted `sound-network/`, and the generative-world director pipeline with its contract tests (see *Generative World Director* below). `ExperimentContext.scene` is `unknown` here on purpose.
+- `src/runtime/` — the only code that may import PlayCanvas: `boot.ts` (Ammo loaded via `pc.WasmModule` **before** `app.start()`, otherwise physics is silently dead), `scene-context.ts` (`{ app, movePlayerTo }` — experiments cast `ctx.scene` to it), `player/third-person.ts`, `assets/glb-loader.ts` (registry entry → entity; `primitive:<type>` or GLB, following `fallback_asset_id` on load failure), `fx/`, `debug/inspector.ts`. Explicitly **not** a universal engine-abstraction layer.
+- `experiments/<id>/` — `experiment.json` (auto-validated) + `index.ts` exporting `create…Experiment(): Experiment` with `init` / `reset` / `destroy`, scene built under one root entity. Current: `playground` (default), `creature-fx-gallery`, `zhalm-forest-v1`, `blockmodel-gallery-v1`, `world-editor-v1`. To add one, follow `docs/runtime/EXTENDING.md` (contract → implement → register in bootstrap → assets via registry → e2e → gates).
+- E2E drives scenes through window hooks (`__protolab`, `__gallery`, `__zhalm`, `__blockgallery`, `__editor`) because synthetic key events never reach the controller without pointer lock. Engine integration is proven by Playwright plus the manual gate, not by unit tests.
+- `public/ammo/` — Ammo.js binaries with provenance (`SOURCE.md`, zlib `LICENSE`), served root-absolute, never through Vite's wasm handling.
 
-- **Prototype Runtime Exception granted** (Ben, 2026-08-23, mission §1): this lab may use a concrete disposable game runtime. That decision does NOT decide the production engine, NOT MCL-1, NOT Minecraft vs. standalone, and may be discarded entirely.
-- Jira MCL-1 (product format) remains **open**. Never declare the lab's runtime choice (PlayCanvas) a product decision.
-- Runtime work happens on `feat/prototype-runtime-foundation` — draft PR against `master`, no self-merge, no force-pushes.
-- **Do not modify `DYAI2025/MC_legends`** as part of prototype work unless separately authorized; it is never a runtime dependency. This lab must not silently evolve into the production game architecture.
+Import boundaries are enforced by config, not prose — twice:
+- `.dependency-cruiser.cjs`: core ↛ runtime / playcanvas / experiments / shell; runtime ↛ experiments / shell; nothing ↛ `MC_legends`. Use `doNotFollow` for node_modules — **never `exclude`**, which silently kills `core-not-to-playcanvas` (measured 2026-08-23).
+- `eslint.config.js` (boundaries plugin; silently passes without the TypeScript import resolver): core → core; runtime → runtime, core; shell and experiments → runtime, core, experiment.
 
-## Hard constraints (from AGENTS.md / ADR-0002)
+`tsconfig.json`: `erasableSyntaxOnly` (no enums / namespaces / parameter properties — use string-literal unions), `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`.
 
-- **Experiment is the unit of change.** New gameplay logic stays experiment-local by default; a mechanic is promoted to shared code only after ≥2 independent experiments need the same behavior contract.
-- **Prototype outcome is evidence, not canon.** Experiments carry `design_status` (STATED | TENTATIVE | AMBIGUOUS | CONFLICT) and `source_refs` (Confluence MLOA / Jira MCL keys); a successful experiment never updates Confluence canon by itself.
-- **Asset provenance is mandatory.** Every asset is registered with source, license, provenance, status, version, and a fallback before use. Gameplay code references stable `asset_id`s, never file paths. No third-party franchise iconography.
-- No backend, database, cloud service, multiplayer, auth, or deployment without a separate architecture decision.
-- No real child names, private submissions, credentials, or secrets in fixtures, screenshots, logs, or assets.
-- **An unexecuted validation gate is `not_run`, never `passed`.** Gates were wired before there was anything to gate, deliberately — keep it that way for new gates (see a new gate fail once before trusting it green).
+## Contracts — JSON Schema is authoritative
 
-## Contracts and docs that matter
+Every schema in `schemas/` uses `additionalProperties: false`; extending a contract means editing schema and contract doc together. `scripts/validate-contracts.mjs` maps each schema to its document directory — a new contract type needs its own block there (it is not auto-discovered).
 
-- `docs/experiments/EXPERIMENT_CONTRACT.md` + `schemas/experiment.schema.json` — what an experiment is (falsifiable hypothesis, tunables, success signals, kill criteria, reset strategy).
-- `docs/assets/ASSET_REGISTRY_CONTRACT.md` + `schemas/asset-registry.schema.json` — asset identity/provenance rules; `assets/registry/assets.example.json` is the reference instance. Named creature concepts additionally validate against `schemas/creature-concept.schema.json`.
-- All schemas use `additionalProperties: false` — extending a contract means editing schema and contract doc together.
-- `docs/architecture/` — ADR-0002, C4-lite diagrams, decision records; `SOURCE_MAP.md` maps claims to evidence (MC_legends commit, Confluence MLOA pages, Jira MCL-1).
-- `docs/plans/` — design, mission, implementation plan, audit addendum (precedence: addendum > mission/design where more specific).
+| Contract | Schema(s) in `schemas/` | Documents | Doc |
+|---|---|---|---|
+| Experiment | `experiment` | `experiments/*/experiment.json`, `_template` | `docs/experiments/EXPERIMENT_CONTRACT.md` |
+| Asset registry | `asset-registry` | `assets/registry/assets.json` (live), `assets.example.json` (reference) | `docs/assets/ASSET_REGISTRY_CONTRACT.md` |
+| Creature concept | `creature-concept` | `concepts/creatures/*.json` | `docs/concepts/CREATURE_CONCEPT_CONTRACT.md` |
+| World layout | `world-layout` | `worlds/*.json` | `docs/runtime/WORLD_EDITOR.md` |
+| Generative world (MCL-81) | `canon-projection`, `world-state`, `world-event`, `director-run`, `director-proposal`, `state-transition`, `branch-node`, `replay-ref` | the MCL-81 example chain across `projections/`, `states/`, `world-events/`, `director-runs/`, `proposals/`, `transitions/`, `branches/`, `replays/`, plus the Zhalm slice fixtures (`*/zhalm-*.json`) | `docs/concepts/GENERATIVE_WORLD_*.md` |
+
+## Generative World Director (MCL-80)
+
+MCL-81 … MCL-85 are on `master`: an engine-free pipeline in `src/core/generative-world/`, one module per stage — `contracts.ts` (TypeScript **mirror** of the schemas, no semantics) → `validation.ts` (AJV 2020 over the same schemas at runtime with `strictNumbers`, which is why `ajv` is a runtime dependency) → `event-ledger.ts` (append-only; `observed_gameplay` evidence vs. derived proposals) → `transition-engine.ts` (pure; `SET_WORLD_FLAG` on declared boolean flags is the whole op vocabulary) → `world-session.ts` (state, reset, provider-free replay) → `director-context.ts` / `fake-provider.ts` / `director-orchestrator.ts` (provider port, deterministic FakeProvider, run lifecycle CREATED → PREPARING → RUNNING → STOPPED | FAILED) → `policy-gate.ts` (every rule evaluated; `GATE_REASON_CODES` is the complete list; privacy findings are stored redacted) → `director-session.ts`, whose `select()` is the only path from a proposal to the world: accepted gate result, unchanged world fingerprint (else `STALE_RUN`), engine dry run, then apply.
+
+- `dependency-guard.test.ts` limits that folder to its own modules, the schemas and `ajv/dist/2020.js`, and bans network, clock, randomness and dynamic-loading APIs — inject clocks, compare via `canonicalJson` (`json.ts`).
+- Zhalm wiring stays experiment-local in `experiments/zhalm-forest-v1/director/` (event bridge, intent catalog, panel). `transition_intent` values are opaque tokens; only an experiment's intent catalog maps them to operations. Browser proof: `e2e/zhalm-director.spec.ts` through the `__zhalm.director` hook.
+- Each contract keeps a focused AJV test in `src/core/<contract>/` that reads its schema cwd-relative (run vitest from the repo root). `BranchNode` / `ReplayRef` hold reference tokens only, never embedded state or payloads.
+- Not built: branch/replay comparison (MCL-86), Consequence Lab UI (MCL-87), a real AI provider (MCL-88, which needs MCL-103's `source_refs` check first). The human value gate MCL-91 decides whether that work happens. Architecture: Confluence MLOA 69697537 (parent 64815106); semantics: `docs/concepts/GENERATIVE_WORLD_DIRECTOR_SLICE.md`.
+- Infinite World is a semantics donor only, no code; reusing donor code would need its own Apache-2.0 attribution/NOTICE check.
+
+## Assets
+
+- Register every asset in `assets/registry/assets.json` (source, license, provenance, status `placeholder | candidate | approved_for_prototype`, version, `fallback_asset_id`) **before** use; code references `asset_id`, never file paths. No third-party franchise iconography.
+- Graybox: JSON cube specs `assets/blockmodels/*.json` → `npm run generate:assets` → `public/assets/generated/*.glb` + `assets/blockmodels/bbmodel/*.bbmodel`. CI diffs the output, so edit the spec and regenerate — never hand-edit the GLB (`docs/runtime/BLOCKBENCH.md`).
+- CC0 environment models: `scripts/fetch-polyhaven.mjs <asset_id>…` → `public/assets/env/`. V2 hero candidates (image→3D via Tripo or `scripts/image-to-3d/trellis.py`) → `public/assets/v2/`, registered as `candidate` until Ben approves them in-game.
+- `.mcp.json` registers a Blockbench MCP at `http://localhost:3000/bb-mcp`; it only answers while the Blockbench desktop app runs with the plugin — ECONNREFUSED otherwise is normal.
+
+**Art direction is V2 — semi-realistic standalone fantasy RPG** (Confluence MLOA:22544386; the V1 Minecraft/voxel language is SUPERSEDED). Anchors: `concepts/art-direction/`; lab rules: `docs/assets/ART_DIRECTION.md`. Blocky generated models are graybox standins only — never present them as the target look.
+
+## Governance and hard constraints
+
+- **Prototype Runtime Exception** (Ben, 2026-08-23): the lab may use a disposable runtime. It does NOT decide the production engine, NOT MCL-1 (product format, still open), NOT Minecraft vs. standalone. Never present PlayCanvas as a product decision.
+- **Do not modify `DYAI2025/MC_legends`** unless separately authorized; it is never a dependency. The lab must not silently evolve into the production game architecture.
+- Branch off `origin/master` (local `master` may lag), PR against `master`; no self-merge, no force-push. Commits are conventional, scoped by the Jira key when there is one (`feat(MCL-81): …`). Stacked story branches: fix a defect on the lowest branch that has it and merge upward, never rebase; after Ben approves, merge bottom-up with merge commits and retarget the next PR (`gh pr edit <n> --base master`).
+- **Experiment is the unit of change.** Logic stays experiment-local until ≥2 independent experiments need the same behavior contract (precedents: `src/core/sound-network/`, `src/runtime/assets/fit.ts`). Duplication between experiments is correct, not a smell.
+- **Prototype outcome is evidence, not canon.** Experiments carry `design_status` (STATED | TENTATIVE | AMBIGUOUS | CONFLICT) and `source_refs` (`MLOA:<pageId>[#section]` for Confluence, `MCL-<n>` for Jira); a result never updates Confluence canon by itself.
+- No backend, database, cloud service, multiplayer or auth without a separate ADR. The only deployment is ADR-0004's static non-root Caddy container (`:8080`, `/healthz`; runbook `docs/runtime/VPS_TEST_INSTANCE.md`): saves stay in browser `localStorage` plus JSON export, no secret goes into Vite env or the image, and `https://mcl-test.poersch.online` is not "live" until the runbook's HTTPS/browser checks pass.
+- No real child names, private submissions, credentials or secrets in fixtures, screenshots, logs or assets.
+- **An unexecuted validation gate is `not_run`, never `passed`.** Make a new gate fail once (canary) before trusting it green; record results in `docs/runtime/VALIDATION.md`.
 
 ## Context
 
-First playable target after the foundation: `zhalm-forest-v1` — a third-person forest encounter testing the Druhen/Zhalm sound-network hypothesis (sound → root trigger → network alert → investigate/chase). User preference is third-person.
-
-World building: `/?experiment=world-editor-v1` — in-runtime editor (place/move/save registry assets, edit↔play toggle, live behaviors incl. the promoted sound network from `src/core/sound-network/`); layouts live in `worlds/*.json` against `schemas/world-layout.schema.json`; docs in `docs/runtime/WORLD_EDITOR.md`.
-
-**Art direction is V2 — semi-realistic standalone fantasy RPG** (Confluence MLOA:22544386; the V1 Minecraft/voxel language is SUPERSEDED). Binding visual anchors live in `concepts/art-direction/`; lab-side rules in `docs/assets/ART_DIRECTION.md`. Blocky generated models are graybox standins only — never present them as the target look.
+- User preference is third-person. `zhalm-forest-v1` is the first playable: a forest encounter testing the Druhen/Zhalm sound-network hypothesis (sound → root trigger → network alert → investigate/chase), and the V2 look-pass testbed.
+- `world-editor-v1` builds worlds in-runtime: place/move registry assets, EDIT (fly cam) ↔ PLAY (`Tab`) with live behavior presets incl. the shared sound network; autosave in `localStorage`, JSON export/import, committed layouts in `worlds/*.json` (bundled via `import.meta.glob`). See `docs/runtime/WORLD_EDITOR.md`.
